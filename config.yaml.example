@@ -1,0 +1,45 @@
+# RPA-everything 配置示例
+# 复制为 config.yaml 并填入真实值
+# config.yaml 已被 .gitignore，不会上传到 git
+
+# ── LLM ──────────────────────────────────────────────────────────────────────
+llm:
+  api_key: "sk-ant-..."          # Anthropic API Key，或内部 AI 网关的 Key
+  base_url: ""                   # 留空直连 Anthropic；填内部网关地址则走网关
+  model: "claude-haiku-4-5-20251001"  # 直连 Anthropic 时的模型名
+  # 内部 AI 网关需加前缀，例如：global.anthropic.claude-sonnet-4-6
+  # 视觉类 Skill（click_by_vision）需多模态模型（sonnet 以上）
+
+# ── 浏览器 ────────────────────────────────────────────────────────────────────
+browser:
+  cdp_url: "http://localhost:9222"  # Chrome 远程调试地址，通常不用改
+
+# ── 飞书开放平台 ──────────────────────────────────────────────────────────────
+# 飞书开放平台 → 应用管理 → 企业自建应用
+feishu:
+  app_id: "cli_xxxxxxxxxxxxxxxx"
+  app_secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# ── 通知 Webhook（可选）─────────────────────────────────────────────────────
+# 自动化任务完成后推送通知（飞书机器人 Webhook）
+notify:
+  webhook: ""                    # 如 "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
+
+# ── HTTP 通用配置 ─────────────────────────────────────────────────────────────
+http:
+  timeout: 30                    # 秒
+
+# ── 目标系统 URL（可按需添加）────────────────────────────────────────────────
+systems:
+  crm:
+    url: ""                      # 如有 CRM 系统填写
+
+# ── 飞书项目日报（skills/feishu_project_daily）────────────────────────────────
+# 如何获取以下字段：打开飞书项目视图页，DevTools → Network → 过滤 mget_ui_async
+#   view_url:      浏览器地址栏的完整 URL
+#   project_key:   响应 JSON 中 work_item_detail_v2 下的字段前缀（形如 625eb563...）
+#   due_field_id:  截止日期自定义字段的后缀（形如 a817fb），在字段 key 中 project_key_ 之后的部分
+feishu_project:
+  view_url: ""       # 如 https://project.feishu.cn/your-project/storyView/Xxx
+  project_key: ""    # 如 625eb563ac5fd9b734b47a5d
+  due_field_id: ""   # 如 a817fb（业务期望交付日期字段 ID，没有可留空）
