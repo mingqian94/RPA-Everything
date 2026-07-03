@@ -14,15 +14,28 @@ from pathlib import Path
 from core import notify
 
 _LOG_DIR = Path(__file__).parent.parent / "logs"
-_LOG_DIR.mkdir(exist_ok=True)
 
-# 控制台输出
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-)
+# 只配置自己的 "rpa" logger，不动根 logger——
+# basicConfig 会覆盖宿主程序（如 MCP server 的调用方）的全局日志配置
 logger = logging.getLogger("rpa")
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S"))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+
+def _cleanup_old_logs(retention_days: int) -> None:
+    """删除超过保留期的执行日志，防止 logs/ 无限增长。失败静默。"""
+    import time
+    cutoff = time.time() - retention_days * 86400
+    try:
+        for f in _LOG_DIR.glob("*.json"):
+            if f.stat().st_mtime < cutoff:
+                f.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 class SkillLogger:
@@ -32,6 +45,9 @@ class SkillLogger:
         self.skill_name = skill_name
         self.started_at = datetime.now()
         self.steps: list[dict] = []
+        _LOG_DIR.mkdir(exist_ok=True)
+        from core.config import get
+        _cleanup_old_logs(int(get("logs.retention_days", 30)))
         self._file = _LOG_DIR / f"{skill_name.replace('/', '_')}_{self.started_at.strftime('%Y%m%d_%H%M%S')}.json"
 
     def step(self, name: str, status: str = "ok", detail: str = ""):

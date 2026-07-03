@@ -1,5 +1,3 @@
-from .browser import open_page
-from .desktop import screenshot, click, type_text, activate_app, get_window_origin
-from .llm import generate, decide, find_element
-from .config import config, get
-from .logger import logger, SkillLogger
+# 刻意留空：不做子模块再导出。
+# 按需 import core.browser / core.desktop / core.llm 等，
+# 避免 import core.config 这类轻量操作连带加载 playwright/pyautogui。

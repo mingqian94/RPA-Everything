@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rpa-everything"
+version = "0.2.0"
+description = "AI writes your automation once, deterministic scripts run it forever"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = [
+    "playwright>=1.44.0,<2",
+    "anthropic>=0.28.0,<2",
+    "mcp>=1.0.0,<2",
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+    "pyautogui>=0.9.54",
+    "pygetwindow>=0.0.9",
+    "pywinauto>=0.6.8; sys_platform == 'win32'",
+    "opencv-python-headless>=4.8.0",
+    # Office 文件读写（showcase/office/）
+    "openpyxl>=3.1.0",
+    "python-pptx>=0.6.23",
+    "python-docx>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/mingqian94/RPA-Everything"
+
+[project.scripts]
+rpa = "run:main"
+
+[tool.setuptools]
+# skills/ 与 showcase/ 是用户内容，从项目根目录按 cwd 解析，不打进包
+py-modules = ["run", "mcp_server"]
+packages = ["core", "connectors", "harness"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+# E402：仓库采用「先 sys.path.insert 再 import」的脚本模式，import 无法都在顶部
+ignore = ["E402"]

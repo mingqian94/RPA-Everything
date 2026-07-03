@@ -14,7 +14,14 @@ CRON_EXPR="$2"
 # 推断项目根目录（脚本所在目录的上级）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-PYTHON_BIN="/opt/homebrew/bin/python3.12"
+# 优先用项目 venv 里的 python，其次 Homebrew Python，最后系统 python3
+if [ -x "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+elif [ -x "/opt/homebrew/bin/python3.12" ]; then
+    PYTHON_BIN="/opt/homebrew/bin/python3.12"
+else
+    PYTHON_BIN="$(command -v python3)"
+fi
 LOG_DIR="$PROJECT_ROOT/logs"
 LOG_FILE="$LOG_DIR/cron_\$(date +%Y%m%d).log"
 

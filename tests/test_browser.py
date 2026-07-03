@@ -5,7 +5,6 @@ Browser 测试：需要 Chrome 以调试端口启动。
 运行前：sh tools/start_chrome.sh
 运行：  pytest -m browser
 """
-import json
 import subprocess
 import sys
 from pathlib import Path

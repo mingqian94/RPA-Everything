@@ -62,6 +62,16 @@ BROWSER_TOOLS = [
         },
     },
     {
+        "name": "browser_extract_table",
+        "description": "提取页面中表格数据，返回 JSON 格式的行列数据。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "selector": {"type": "string", "description": "表格的 CSS 选择器，默认 table"},
+            },
+        },
+    },
+    {
         "name": "browser_evaluate",
         "description": "在页面中执行 JavaScript 并返回结果。可用于注入代码、操作复杂组件。",
         "input_schema": {
@@ -107,6 +117,21 @@ DESKTOP_TOOLS = [
             "type": "object",
             "properties": {"text": {"type": "string"}},
             "required": ["text"],
+        },
+    },
+    {
+        "name": "desktop_hotkey",
+        "description": "发送键盘快捷键，如 ['command', 'v']、['ctrl', 'c']。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "keys": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "按键列表，如 ['command', 'c'] 或 ['ctrl', 'v']",
+                },
+            },
+            "required": ["keys"],
         },
     },
     {
@@ -170,6 +195,22 @@ async def execute_browser_tool(name: str, args: dict, page) -> list[dict]:
             text = await page.evaluate("document.body.innerText")
         return [{"type": "text", "text": text[:5000]}]
 
+    if name == "browser_extract_table":
+        import json as _json
+        sel = args.get("selector") or "table"
+        # 选择器作为参数传入，避免拼进 JS 字符串（含引号的选择器会导致语法错误）
+        rows = await page.evaluate("""(sel) => {
+            const table = document.querySelector(sel);
+            if (!table) return [];
+            const rows = Array.from(table.querySelectorAll('tr'));
+            return rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => c.innerText.trim()));
+        }""", sel)
+        if not rows:
+            return [{"type": "text", "text": "未找到表格"}]
+        headers, *data = rows
+        records = [dict(zip(headers, row)) for row in data]
+        return [{"type": "text", "text": _json.dumps(records, ensure_ascii=False, indent=2)}]
+
     if name == "browser_evaluate":
         result = await page.evaluate(args["js"])
         return [{"type": "text", "text": str(result)}]
@@ -178,7 +219,7 @@ async def execute_browser_tool(name: str, args: dict, page) -> list[dict]:
 
 
 def execute_desktop_tool(name: str, args: dict) -> list[dict]:
-    from core.desktop import screenshot, click, type_text, physical_to_logical
+    from core.desktop import screenshot, click, type_text, hotkey, physical_to_logical
 
     if name == "desktop_screenshot":
         path = screenshot()
@@ -197,5 +238,10 @@ def execute_desktop_tool(name: str, args: dict) -> list[dict]:
     if name == "desktop_type":
         type_text(args["text"])
         return [{"type": "text", "text": "输入完成。"}]
+
+    if name == "desktop_hotkey":
+        keys = args["keys"]
+        hotkey(*keys)
+        return [{"type": "text", "text": f"已执行快捷键：{'+'.join(keys)}"}]
 
     return [{"type": "text", "text": f"未知工具：{name}"}]

@@ -23,14 +23,13 @@ RPA Harness Agent
 
 import asyncio
 import json
-import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
-from core.llm import generate
+from core.llm import agent_step
 from core.browser import BrowserManager
 from core.logger import SkillLogger
 from core.agent import run_browser, run_desktop
@@ -63,45 +62,57 @@ SKILL_REGISTRY = {
 
 # ── 规划 ──────────────────────────────────────────────────────────────────────
 
+_PLAN_TOOL = {
+    "name": "submit_plan",
+    "description": "提交任务规划结果。",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "skill": {"type": "string", "description": "技能名，必须来自可用技能列表"},
+                        "goal": {"type": "string", "description": "子任务的具体目标（给 subagent 的完整指令，subagent 只看这一句话）"},
+                        "parallel": {"type": "boolean", "description": "与相邻任务并发执行。浏览器任务共享同一 Chrome 实例，不要并发"},
+                        "label": {"type": "string", "description": "一句话说明"},
+                    },
+                    "required": ["skill", "goal", "label"],
+                },
+            },
+        },
+        "required": ["tasks"],
+    },
+}
+
+
 def plan(goal: str) -> list[dict]:
-    """用 LLM 把目标分解成 subagent 调用序列。JSON 解析失败时自动重试一次。"""
+    """用 LLM 把目标分解成 subagent 调用序列。
+    通过强制 tool use 拿结构化输出，不再从自由文本里正则抠 JSON。"""
     registry_desc = json.dumps(
         {k: {"description": v["description"]} for k, v in SKILL_REGISTRY.items()},
         ensure_ascii=False,
         indent=2,
     )
-    prompt = f"""你是 RPA 任务规划器。将用户目标分解为子任务序列。
+    prompt = f"""你是 RPA 任务规划器。将用户目标分解为子任务序列，调用 submit_plan 提交。
 
 可用技能：
 {registry_desc}
 
-用户目标：{goal}
+用户目标：{goal}"""
 
-返回 JSON 数组，每项格式：
-{{
-  "skill": "技能名",
-  "goal": "这个子任务的具体目标（给 subagent 的完整指令）",
-  "parallel": false,
-  "label": "一句话说明"
-}}
-
-规则：
-- parallel=true 的相邻任务会并发执行，浏览器任务共享同一 Chrome 实例，不要并发
-- goal 字段要足够具体，subagent 不看其他上下文，只靠这一句话完成任务
-- 只返回合法 JSON 数组，不要解释"""
-
-    last_err = ""
-    for attempt in range(1, 3):
-        response = generate(prompt, max_tokens=1024)
-        match = re.search(r"\[.*\]", response, re.DOTALL)
-        if not match:
-            last_err = f"未找到 JSON 数组，原始响应：{response[:200]}"
-            continue
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError as e:
-            last_err = f"JSON 解析失败：{e}，片段：{match.group()[:200]}"
-    raise ValueError(f"规划失败（已重试 2 次）：{last_err}")
+    resp = agent_step(
+        [{"role": "user", "content": prompt}],
+        tools=[_PLAN_TOOL],
+        tool_choice={"type": "tool", "name": "submit_plan"},
+    )
+    for block in resp.content:
+        if block.type == "tool_use" and block.name == "submit_plan":
+            tasks = block.input.get("tasks", [])
+            if tasks:
+                return tasks
+    raise ValueError(f"规划失败：模型未返回有效计划（stop_reason={resp.stop_reason}）")
 
 
 # ── 执行 ──────────────────────────────────────────────────────────────────────
@@ -233,24 +244,24 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
     skill_name = path.stem
 
     lines = [
-        f'"""',
-        f'[自动生成] 从 Harness 计划固化',
+        '"""',
+        '[自动生成] 从 Harness 计划固化',
         f'原始目标：{goal}',
-        f'',
-        f'固化步骤：',
-        f'  1. 把每个 TODO 替换成确定性 Playwright/桌面代码',
+        '',
+        '固化步骤：',
+        '  1. 把每个 TODO 替换成确定性 Playwright/桌面代码',
         f'  2. python run.py {path.with_suffix("").as_posix().replace(str(Path.cwd()) + "/", "")} 验证',
         f'  3. sh tools/cron_helper.sh {path.with_suffix("").as_posix()} "0 9 * * 1-5"',
-        f'"""',
-        f'',
-        f'import asyncio',
-        f'from core.browser import open_page',
-        f'from core.logger import SkillLogger',
-        f'',
-        f'',
-        f'async def main():',
+        '"""',
+        '',
+        'import asyncio',
+        'from core.browser import open_page',
+        'from core.logger import SkillLogger',
+        '',
+        '',
+        'async def main():',
         f'    log = SkillLogger("{skill_name}")',
-        f'',
+        '',
     ]
 
     for i, task in enumerate(tasks, 1):
@@ -272,30 +283,30 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
 
         if task_type == "browser":
             lines += [
-                f'    # TODO: 替换为确定性 Playwright 脚本',
-                f'    # async with open_page("URL") as page:',
-                f'    #     await page.click("...")',
-                f'    pass',
-                f'',
+                '    # TODO: 替换为确定性 Playwright 脚本',
+                '    # async with open_page("URL") as page:',
+                '    #     await page.click("...")',
+                '    pass',
+                '',
             ]
         else:
             lines += [
-                f'    # TODO: 替换为确定性桌面自动化（pyautogui / desktop.py）',
-                f'    pass',
-                f'',
+                '    # TODO: 替换为确定性桌面自动化（pyautogui / desktop.py）',
+                '    pass',
+                '',
             ]
 
     lines += [
-        f'    log.finish()',
-        f'',
-        f'',
-        f'if __name__ == "__main__":',
-        f'    asyncio.run(main())',
+        '    log.finish()',
+        '',
+        '',
+        'if __name__ == "__main__":',
+        '    asyncio.run(main())',
     ]
 
     path.write_text("\n".join(lines), encoding="utf-8")
     print(f"\n📄 骨架脚本已生成：{path}", flush=True)
-    print(f"   下一步：打开文件，把各步骤的 TODO 替换成确定性代码", flush=True)
+    print("   下一步：打开文件，把各步骤的 TODO 替换成确定性代码", flush=True)
 
 
 # ── 入口 ──────────────────────────────────────────────────────────────────────
@@ -323,7 +334,7 @@ async def run(goal: str, dry_run: bool = False, export: str = "", sop: str = "")
         log.finish({"dry_run": True, "plan": tasks})
         return tasks
 
-    print(f"\n🚀 启动 Subagent 执行...\n", flush=True)
+    print("\n🚀 启动 Subagent 执行...\n", flush=True)
 
     try:
         results = await _execute_plan(tasks, log)

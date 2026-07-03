@@ -11,24 +11,23 @@ from __future__ import annotations
 
 import platform
 import subprocess
-import sys
 import tempfile
 
 _IS_WINDOWS = platform.system() == "Windows"
 _IS_MAC = platform.system() == "Darwin"
 
 # pyautogui：macOS 需要 brew Python 3.12+，Windows/Linux 用当前 Python
+# 除 ImportError 外，headless 环境（如 CI）下 pyautogui 会因无 DISPLAY 抛 KeyError 等异常
 try:
     import pyautogui
     pyautogui.FAILSAFE = False
     pyautogui.PAUSE = 0.2
     _HAS_PYAUTOGUI = True
-except ImportError:
+except Exception:
     _HAS_PYAUTOGUI = False
 
 if _IS_WINDOWS:
     try:
-        import pywinauto
         from pywinauto import Application as _WinApp
     except ImportError:
         pass

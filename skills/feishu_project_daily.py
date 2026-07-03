@@ -28,7 +28,6 @@ Skill: 今日节点 & 延期需求日报
 from __future__ import annotations
 
 import asyncio
-import json
 from collections import defaultdict
 from datetime import date, datetime, timezone, timedelta
 
@@ -159,7 +158,7 @@ def _print_report(items: list[dict], today: date) -> None:
     else:
         print("  无")
 
-    print(f"\n👤 各负责人在跟需求")
+    print("\n👤 各负责人在跟需求")
     for owner, owner_items in sorted(by_owner.items(), key=lambda x: -len(x[1])):
         print(f"\n  {owner}（{len(owner_items)} 条）")
         for i in sorted(owner_items, key=lambda x: x["due"] or date.max):

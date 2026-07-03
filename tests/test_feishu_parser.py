@@ -2,7 +2,6 @@
 测试 feishu_project_daily 的纯逻辑层：字段解析和报告生成。
 不依赖浏览器或 LLM，使用 fixture 数据。
 """
-import pytest
 from datetime import date, datetime, timezone, timedelta
 from skills.feishu_project_daily import _parse_item, _build_field_keys, _print_report
 
