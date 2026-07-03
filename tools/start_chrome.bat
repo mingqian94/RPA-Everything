@@ -18,7 +18,9 @@ start "" "%CHROME%" --remote-debugging-port=9222 --user-data-dir="%PROFILE_DIR%"
 :: 等待就绪
 set /a count=0
 :wait
-timeout /t 1 /nobreak >nul
+:: 用 ping 等待 1 秒——timeout /t 在非交互环境（如被脚本调用）会报
+:: "Input redirection is not supported" 直接退出
+ping -n 2 127.0.0.1 >nul
 curl -s http://127.0.0.1:9222/json/version >nul 2>&1
 if %errorlevel% == 0 (
     echo [OK] Chrome 已就绪 ^(127.0.0.1:9222^)

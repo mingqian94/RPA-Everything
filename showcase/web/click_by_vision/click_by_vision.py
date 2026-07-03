@@ -91,7 +91,9 @@ async def _run(args):
         print(f"点击完成，结果截图已保存：{result_path}")
 
 
-def main():
+# main 保持 async：run.py 会在事件循环内统一关闭 BrowserManager，
+# 同步 main 自己 asyncio.run 的话 Playwright 清理不到（Windows 上退出报错）
+async def main():
     parser = argparse.ArgumentParser(description="Browser + LLM Vision 点击")
     parser.add_argument("--url", default="", help="目标页面 URL（不填则用当前浏览器页面）")
     parser.add_argument("--action", required=True, help="要点击的元素描述，如「右上角的导出按钮」")
@@ -104,4 +106,8 @@ def main():
         argv = sys.argv[1:]
 
     args = parser.parse_args(argv)
-    asyncio.run(_run(args))
+    await _run(args)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

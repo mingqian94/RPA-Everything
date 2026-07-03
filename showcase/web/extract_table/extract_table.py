@@ -31,7 +31,9 @@ from core.logger import SkillLogger
 from core.config import get
 
 
-def main():
+# main 保持 async：run.py 会在事件循环内统一关闭 BrowserManager，
+# 同步 main 自己 asyncio.run 的话 Playwright 清理不到（Windows 上退出报错）
+async def main():
     parser = argparse.ArgumentParser(description="从网页表格提取数据")
     parser.add_argument("--url", default="", help="目标页面 URL（不填则使用当前浏览器页面）")
     parser.add_argument("--filter", default="", help="在搜索框中输入的过滤关键词（可选）")
@@ -107,5 +109,9 @@ def main():
 
             return [dict(zip(headers, row)) for row in rows]
 
+    return await _run()
+
+
+if __name__ == "__main__":
     import asyncio
-    return asyncio.run(_run())
+    asyncio.run(main())

@@ -56,7 +56,17 @@ def main():
         sys.exit(1)
 
     if asyncio.iscoroutinefunction(mod.main):
-        asyncio.run(mod.main())
+        async def _runner():
+            try:
+                await mod.main()
+            finally:
+                # Skill 忘记关 Playwright 时兜底：必须在事件循环内 stop，
+                # 否则 Windows 上循环关闭后子进程被 GC 会报 "Event loop is closed"
+                if "core.browser" in sys.modules:
+                    from core.browser import BrowserManager
+                    await BrowserManager.close()
+
+        asyncio.run(_runner())
     else:
         mod.main()
 
