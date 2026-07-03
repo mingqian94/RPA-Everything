@@ -18,16 +18,18 @@ class VerifyResult:
 class VerifyContext:
     def desktop_screenshot(self) -> str:
         """截取整个桌面，返回临时 PNG 文件路径。"""
-        import pyautogui
-        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        pyautogui.screenshot(tmp.name)
-        return tmp.name
+        # 复用 core.desktop：macOS 优先 screencapture、错误提示带权限指引，
+        # 且临时文件用 mkstemp（NamedTemporaryFile 的句柄不关，Windows 上写同一路径会报错）
+        from .desktop import screenshot
+        return screenshot()
 
     async def browser_screenshot(self, page) -> str:
         """截取当前 Playwright page，返回临时 PNG 文件路径。"""
-        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        await page.screenshot(path=tmp.name)
-        return tmp.name
+        import os
+        fd, path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        await page.screenshot(path=path)
+        return path
 
     def judge(self, sop: str, screenshot_path: str) -> VerifyResult:
         """截图 + SOP → LLM 判断任务是否已按规范完成。"""

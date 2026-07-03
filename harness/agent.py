@@ -199,9 +199,10 @@ def _load_sop(sop_path: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _verify_and_confirm(sop: str) -> bool:
+async def _verify_and_confirm(sop: str, tasks: list[dict]) -> bool:
     """
     执行后截图验证。返回 True=继续，False=终止。
+    浏览器类任务截当前页面，桌面类任务截全屏。
     失败时暂停交互，非交互模式（MCP subprocess）默认继续。
     """
     from core.verify import VerifyContext
@@ -209,8 +210,16 @@ def _verify_and_confirm(sop: str) -> bool:
     ctx = VerifyContext()
     print("\n🔍 正在截图验证结果...", flush=True)
 
+    has_browser_task = any(
+        SKILL_REGISTRY.get(t.get("skill"), {}).get("type") == "browser" for t in tasks
+    )
+
     try:
-        shot = ctx.desktop_screenshot()
+        if has_browser_task:
+            page = await BrowserManager.current_page()
+            shot = await ctx.browser_screenshot(page)
+        else:
+            shot = ctx.desktop_screenshot()
         verdict = ctx.judge(sop, shot)
     except Exception as e:
         print(f"⚠️  verify 出错，跳过：{e}", flush=True)
@@ -350,7 +359,7 @@ async def run(goal: str, dry_run: bool = False, export: str = "", sop: str = "")
 
     if sop:
         sop_content = _load_sop(sop)
-        should_continue = _verify_and_confirm(sop_content)
+        should_continue = await _verify_and_confirm(sop_content, tasks)
         if not should_continue:
             log.finish({"ok": ok, "total": len(results), "verify": "terminated"})
             sys.exit(1)

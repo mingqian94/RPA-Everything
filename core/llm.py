@@ -57,6 +57,33 @@ def generate_batch(prompt_template: str, items: list[dict]) -> list[str]:
     return lines
 
 
+def generate_vision(prompt: str, screenshot_path: str, system: str = "", max_tokens: int = 2048) -> str:
+    """带截图的内容生成（如根据页面截图生成代码）。需要多模态模型。"""
+    with open(screenshot_path, "rb") as f:
+        img_data = base64.standard_b64encode(f.read()).decode()
+    kwargs = dict(
+        model=_model(), max_tokens=max_tokens,
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_data}},
+                {"type": "text", "text": prompt},
+            ],
+        }],
+    )
+    if system:
+        kwargs["system"] = system
+    try:
+        resp = _get_client().messages.create(**kwargs)
+    except Exception as e:
+        if is_vision_unsupported(e):
+            raise RuntimeError(
+                f"当前模型 {_model()!r} 不支持视觉输入，请在 config.yaml 中配置多模态模型（如 claude-sonnet-4-6）。"
+            ) from e
+        raise
+    return resp.content[0].text.strip()
+
+
 def decide(question: str, screenshot_path: str | None = None) -> str:
     """
     让 Claude 做判断，返回简短答案。

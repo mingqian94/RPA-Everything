@@ -8,6 +8,9 @@
 
 只有目标元素内容每次运行都变、没法预先截模板时，才退到 `core.llm.find_element()`（LLM 视觉识别）。
 
-当前目录暂无内置示例——桌面应用截图/坐标跟每个人的系统和分辨率强相关，不适合直接复用别人截的模板。
-参考 `core/desktop.py` 的 `locate_and_click()` / `activate_app()` / `physical_to_logical()`
-自己写一个，或参考 [CONTRIBUTING.md](../../CONTRIBUTING.md) 贡献一个通用示例回来。
+内置示例：[template_click](template_click/) —— 模板路径由参数传入（机器无关），
+截一张自己系统上的按钮图就能跑，照着它写自己的桌面 Skill 即可。
+
+注意模板图片本身跟机器强相关（分辨率/缩放），所以 `assets/` 下的模板需要自己截，
+不要复用别人的。参考 `core/desktop.py` 的 `locate_and_click()` / `activate_app()` /
+`physical_to_logical()`，或参考 [CONTRIBUTING.md](../../CONTRIBUTING.md) 贡献通用示例。

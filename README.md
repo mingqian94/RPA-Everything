@@ -80,6 +80,7 @@ rpa-everything/
 │   ├── llm.py               # Claude API (decisions / content generation / vision fallback)
 │   ├── agent.py             # Agentic loop (run_browser / run_desktop)
 │   ├── tools.py             # Single source of truth for tool schemas (shared by agent loop & MCP Server)
+│   ├── skills.py            # Skill discovery & saving (shared by run.py / MCP / generator)
 │   ├── config.py            # Config access (config.yaml + environment variables)
 │   ├── logger.py            # Structured execution logs (auto-pruned)
 │   ├── notify.py            # Failure notifications (Feishu webhook)
@@ -96,7 +97,8 @@ rpa-everything/
 │   ├── web/
 │   │   ├── extract_table/   # Generic web table extraction (Browser DOM)
 │   │   └── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
-│   ├── app/                 # Desktop Skills, located via image template matching
+│   ├── app/
+│   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
 │   └── office/              # Pure file-format operations — no screen needed, server-friendly
 │       ├── excel_toolkit/   # Excel read/write (openpyxl)
 │       ├── ppt_generator/   # Generate PPT from structured content (python-pptx)
@@ -432,6 +434,7 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 |---|---|---|---|
 | `showcase/web/extract_table` | Browser DOM | ✅ Runnable | `--url https://www.w3schools.com/html/html_tables.asp` |
 | `showcase/web/click_by_vision` | Browser + LLM Vision | ✅ Runnable | `model: global.anthropic.claude-sonnet-4-6` in config.yaml |
+| `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |

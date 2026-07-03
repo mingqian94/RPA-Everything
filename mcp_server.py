@@ -162,12 +162,8 @@ async def _handle_desktop_find_click(arguments: dict):
 
 
 async def _handle_skill_list(arguments: dict):
-    skills = []
-    for base in ["showcase", "skills"]:
-        for p in sorted(ROOT.rglob(f"{base}/**/*.py")):
-            if not p.name.startswith("_"):
-                skills.append(str(p.relative_to(ROOT).with_suffix("")))
-    return _text("\n".join(skills) or "暂无 Skill")
+    from core.skills import list_skills
+    return _text("\n".join(list_skills()) or "暂无 Skill")
 
 
 async def _handle_skill_run(arguments: dict):
@@ -184,14 +180,7 @@ async def _handle_skill_run(arguments: dict):
     return _text(result.stdout + result.stderr or "运行完成")
 
 
-def safe_skill_path(name: str) -> Path | None:
-    """把 LLM 生成的 Skill 名称解析为 skills/ 内的安全路径。
-    跳出 skills/ 目录（路径穿越）时返回 None。"""
-    skills_dir = (ROOT / "skills").resolve()
-    path = (skills_dir / f"{name}.py").resolve()
-    if not path.is_relative_to(skills_dir):
-        return None
-    return path
+from core.skills import safe_skill_path  # noqa: E402  分发表和测试都引用这个名字
 
 
 async def _handle_skill_save(arguments: dict):

@@ -18,17 +18,6 @@ for _stream in (sys.stdout, sys.stderr):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
 
-def _list_skills():
-    result = []
-    for base in ["showcase", "skills"]:
-        for p in sorted(Path(base).rglob("*.py")):
-            if p.name.startswith("_"):
-                continue
-            rel = p.with_suffix("")
-            result.append(rel.as_posix())  # 统一正斜杠，Windows 下分组/展示才一致
-    return result
-
-
 def main():
     # 支持 `rpa` 入口从项目根目录运行：skill 按 cwd 相对路径解析
     cwd = str(Path.cwd())
@@ -36,8 +25,9 @@ def main():
         sys.path.insert(0, cwd)
 
     if len(sys.argv) < 2:
+        from core.skills import list_skills
         print("用法：python run.py <skill路径>\n")
-        skills = _list_skills()
+        skills = list_skills()
         if skills:
             print("可用 Skill：")
             prev_base = None

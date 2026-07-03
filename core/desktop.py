@@ -204,8 +204,8 @@ def get_window_origin(app_name: str) -> tuple[int, int]:
 def _resolve(x: int, y: int, window: str | None) -> tuple[int, int]:
     """将窗口相对坐标转换为屏幕绝对坐标。window=None 时直接返回原值。
     注意：这里的 x/y 约定为 pyautogui 逻辑像素（即 pyautogui.size() 的坐标系），
-    不是 screenshot()/locate_and_click() 用的物理像素——调用方需自行换算，
-    参考 showcase/app/post_circle 里已标定的坐标或用 physical_to_logical() 转换。"""
+    不是 screenshot()/locate_and_click() 用的物理像素——调用方需自行
+    用 physical_to_logical() 换算，坐标系差异详见 ARCHITECTURE.md。"""
     if window is None:
         return x, y
     wx, wy = get_window_origin(window)
@@ -345,3 +345,6 @@ def _paste_text(text: str):
         pyperclip.copy(text)
         _require_pyautogui()
         pyautogui.hotkey("ctrl", "v")
+    else:
+        # 静默返回会让调用方误以为输入成功
+        raise NotImplementedError("剪贴板粘贴暂不支持当前平台（仅 macOS / Windows）")

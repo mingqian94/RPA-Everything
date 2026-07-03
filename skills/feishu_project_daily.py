@@ -109,9 +109,30 @@ async def _collect_items(page, view_url: str, project_key: str) -> list[dict]:
     except Exception:
         await page.wait_for_load_state("domcontentloaded")
 
-    await asyncio.sleep(4)
+    # 轮询拦截结果直到数量稳定（连续 2 次不变且非空），替代固定 sleep：
+    # 网络慢时固定等待会漏数据，网络快时白等
+    deadline = asyncio.get_event_loop().time() + 20
+    prev, stable = -1, 0
+    while asyncio.get_event_loop().time() < deadline:
+        count = await page.evaluate("(window.__rpa_items || []).length")
+        if count > 0 and count == prev:
+            stable += 1
+            if stable >= 2:
+                break
+        else:
+            stable = 0
+        prev = count
+        await asyncio.sleep(0.5)
 
     raw_items = await page.evaluate("window.__rpa_items || []")
+    if not raw_items:
+        print(
+            "⚠️  未拦截到任何 mget_ui_async 响应。可能原因：\n"
+            "   - 未登录飞书项目（在 RPA Chrome 里手动打开视图页确认）\n"
+            "   - view_url 不是需求视图页\n"
+            "   - 飞书前端改用了非 fetch 的请求方式（本 Skill 只 hook 了 fetch）",
+            flush=True,
+        )
     due_field_id = get("feishu_project.due_field_id", "")
     fields = _build_field_keys(project_key, due_field_id)
 

@@ -18,16 +18,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-import anthropic
-from playwright.async_api import async_playwright
-
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-
-from core.config import get
-
-_API_KEY = get("llm.api_key") or os.environ.get("ANTHROPIC_API_KEY")
-_MODEL = "claude-sonnet-4-6"
 
 FRAMEWORK_CONTEXT = """
 你是一个 RPA Skill 代码生成器。根据用户提供的页面截图和操作描述，生成符合以下框架规范的 Python Skill 代码。
@@ -81,29 +73,27 @@ async def main():
 """
 
 
-async def capture_screenshot() -> str:
-    """连接已登录的 Chrome，截取当前页面"""
+async def capture_screenshot() -> tuple[str | None, str | None, str]:
+    """连接已登录的 Chrome（复用 core.browser 配置与连接），截取当前活动页面。
+    成功返回 (截图路径, url, 标题)；失败返回 (None, None, 错误信息)。"""
+    from core.browser import BrowserManager
     try:
-        async with async_playwright() as p:
-            browser = await p.chromium.connect_over_cdp("http://localhost:9222")
-            context = browser.contexts[0]
-            page = context.pages[0]
-            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-            await page.screenshot(path=tmp.name, full_page=False)
-            url = page.url
-            title = await page.title()
-            return tmp.name, url, title
+        page = await BrowserManager.current_page()
+        fd, path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        await page.screenshot(path=path, full_page=False)
+        url = page.url
+        title = await page.title()
+        return path, url, title
     except Exception as e:
         return None, None, str(e)
+    finally:
+        await BrowserManager.close()
 
 
 def generate_skill_code(screenshot_path: str, url: str, title: str, description: str) -> str:
-    """调用 Claude 生成 Skill 代码"""
-    import base64
-    client = anthropic.Anthropic(api_key=_API_KEY)
-
-    with open(screenshot_path, "rb") as f:
-        img_data = base64.standard_b64encode(f.read()).decode()
+    """调用 Claude 生成 Skill 代码。模型/网关走 config.yaml（llm.model / llm.base_url）。"""
+    from core.llm import generate_vision
 
     prompt = f"""
 页面信息：
@@ -116,20 +106,7 @@ def generate_skill_code(screenshot_path: str, url: str, title: str, description:
 请根据截图中的页面结构和用户描述，生成完整的 Python Skill 代码。
 只输出代码，不要解释。
 """
-
-    resp = client.messages.create(
-        model=_MODEL,
-        max_tokens=2048,
-        system=FRAMEWORK_CONTEXT,
-        messages=[{
-            "role": "user",
-            "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_data}},
-                {"type": "text", "text": prompt},
-            ]
-        }]
-    )
-    code = resp.content[0].text.strip()
+    code = generate_vision(prompt, screenshot_path, system=FRAMEWORK_CONTEXT)
     # 去掉 markdown 代码块标记
     if code.startswith("```"):
         code = "\n".join(code.split("\n")[1:])
@@ -138,8 +115,11 @@ def generate_skill_code(screenshot_path: str, url: str, title: str, description:
     return code.strip()
 
 
-def save_skill(code: str, skill_name: str) -> Path:
-    path = ROOT / "skills" / f"{skill_name}.py"
+def save_skill(code: str, skill_name: str) -> Path | None:
+    from core.skills import safe_skill_path
+    path = safe_skill_path(skill_name)
+    if path is None:
+        return None
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(code, encoding="utf-8")
     return path
@@ -186,8 +166,11 @@ async def main():
     skill_name = input("\n保存为（skills/<名称>.py），输入名称（留空不保存）：").strip()
     if skill_name:
         path = save_skill(code, skill_name)
-        print(f"\n已保存：{path}")
-        print(f"运行：python run.py skills/{skill_name}")
+        if path is None:
+            print(f"\n非法名称：{skill_name}（不允许跳出 skills/ 目录），未保存。")
+        else:
+            print(f"\n已保存：{path}")
+            print(f"运行：python run.py skills/{skill_name}")
     else:
         print("未保存。")
 
