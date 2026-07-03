@@ -72,10 +72,11 @@ def _strip_images(messages: list[dict]) -> list[dict]:
 
 async def _call(messages, tools):
     """调用 agent_step，若模型不支持图片则自动降级重试。"""
+    from core.llm import is_vision_unsupported
     try:
         return await asyncio.to_thread(agent_step, messages, tools, SYSTEM_PROMPT)
     except Exception as e:
-        if "multimodal" in str(e).lower() or "image" in str(e).lower() or "400" in str(e):
+        if is_vision_unsupported(e):
             return await asyncio.to_thread(
                 agent_step, _strip_images(messages), tools, SYSTEM_PROMPT
             )

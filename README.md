@@ -398,6 +398,13 @@ MCP Server 是本框架的对话入口，让用户无需写代码，通过与 Cl
 Claude: desktop_screenshot → 识别输入框位置 → desktop_click → desktop_type → 截图确认
 ```
 
+### 安全边界
+
+MCP Server 把「操作屏幕、写入并运行代码」的能力交给了 LLM，这意味着**模型读到的任何内容（包括网页正文）都可能间接影响它调用工具的方式**（prompt injection）。使用时请注意：
+
+- 探索阶段让 Claude 操作**不可信网页**时，留意它发起的 `skill_save` / `skill_run` 调用是否符合你的意图，Claude Desktop 的工具确认弹窗不要盲目放行
+- `skill_save` 只允许写入 `skills/` 目录内；保存的代码在运行前建议先人工过一眼
+- 固化后的 Skill 是纯脚本、不接触 LLM，不存在此类风险——这也是本框架主张「探索归探索、生产归生产」的原因之一
 
 ---
 

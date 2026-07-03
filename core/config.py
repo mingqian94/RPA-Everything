@@ -17,11 +17,16 @@ config = _load()
 
 
 def get(key: str, default=None):
-    """支持点分隔路径，如 get('systems.crm.url')"""
-    keys = key.split(".")
+    """支持点分隔路径，如 get('systems.crm.url')。
+    优先级：config.yaml → 环境变量（点换下划线大写，如 LLM_API_KEY）→ default。
+    显式配置的假值（False/0/空串）原样返回，不会被 default 覆盖。"""
     val = config
-    for k in keys:
-        if not isinstance(val, dict):
-            return default
-        val = val.get(k, default)
-    return val or default or os.environ.get(key.upper().replace(".", "_"))
+    for k in key.split("."):
+        if not isinstance(val, dict) or k not in val:
+            val = None
+            break
+        val = val[k]
+    if val is None:  # 未配置或 yaml 里留空
+        env = os.environ.get(key.upper().replace(".", "_"))
+        return env if env is not None else default
+    return val

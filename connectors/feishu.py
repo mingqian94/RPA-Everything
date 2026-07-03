@@ -3,6 +3,7 @@
 文档：https://open.feishu.cn/document/home/index
 """
 
+import json
 import time
 import requests
 from core.config import get
@@ -13,12 +14,19 @@ _TOKEN_URL = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/inter
 _MSG_URL = "https://open.feishu.cn/open-apis/im/v1/messages"
 
 _token_cache = {"token": None, "expires_at": 0}
+_TIMEOUT = 15  # 秒；cron 场景下网络挂起时避免永久阻塞
 
 
 def _get_token() -> str:
     if time.time() < _token_cache["expires_at"] - 60:
         return _token_cache["token"]
-    resp = requests.post(_TOKEN_URL, json={"app_id": _APP_ID, "app_secret": _APP_SECRET}).json()
+    resp = requests.post(
+        _TOKEN_URL,
+        json={"app_id": _APP_ID, "app_secret": _APP_SECRET},
+        timeout=_TIMEOUT,
+    ).json()
+    if "tenant_access_token" not in resp:
+        raise RuntimeError(f"获取飞书 token 失败：{resp.get('msg', resp)}")
     _token_cache["token"] = resp["tenant_access_token"]
     _token_cache["expires_at"] = time.time() + resp["expire"]
     return _token_cache["token"]
@@ -34,7 +42,13 @@ def send(open_id: str, content: str) -> bool:
         _MSG_URL,
         headers=_headers(),
         params={"receive_id_type": "open_id"},
-        json={"receive_id": open_id, "msg_type": "text", "content": f'{{"text":"{content}"}}'},
+        json={
+            "receive_id": open_id,
+            "msg_type": "text",
+            # content 字段要求是 JSON 字符串；手工拼接会被引号/换行打穿
+            "content": json.dumps({"text": content}, ensure_ascii=False),
+        },
+        timeout=_TIMEOUT,
     ).json()
     return resp.get("code") == 0
 

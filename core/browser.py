@@ -34,8 +34,8 @@ class BrowserManager:
             cls._playwright = await async_playwright().start()
         try:
             cls._browser = await cls._playwright.chromium.connect_over_cdp(_CDP_URL)
-        except Exception:
-            raise RuntimeError(_HINT)
+        except Exception as e:
+            raise RuntimeError(f"{_HINT}\n（原始错误：{type(e).__name__}: {e}）") from e
 
     @classmethod
     async def new_page(cls) -> Page:

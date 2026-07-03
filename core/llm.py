@@ -21,6 +21,16 @@ _client = (
 _MODEL = get("llm.model") or "claude-haiku-4-5-20251001"
 
 
+def is_vision_unsupported(e: Exception) -> bool:
+    """判断异常是否为「模型不支持图片输入」。
+    只认 API 的 400 类错误且信息里提到 image/multimodal/vision，
+    避免用 `"400" in str(e)` 这种子串匹配误伤其他错误。"""
+    if not isinstance(e, anthropic.BadRequestError):
+        return False
+    msg = str(e).lower()
+    return any(kw in msg for kw in ("image", "multimodal", "vision"))
+
+
 def generate(prompt: str, context: str = "", max_tokens: int = 1024) -> str:
     """生成文本内容，用于消息文案、摘要等场景"""
     messages = [{"role": "user", "content": f"{context}\n\n{prompt}" if context else prompt}]
@@ -82,7 +92,7 @@ def judge(question: str, screenshot_path: str, context: str = "") -> dict:
             messages=[{"role": "user", "content": content}],
         )
     except Exception as e:
-        if "multimodal" in str(e).lower() or "400" in str(e):
+        if is_vision_unsupported(e):
             raise RuntimeError(
                 f"当前模型 {_MODEL!r} 不支持视觉输入，verify 需要多模态模型（如 claude-sonnet-4-6）。\n"
                 "请在 config.yaml 中配置 llm.model。"
@@ -118,7 +128,7 @@ def find_element(description: str, screenshot_path: str) -> dict | None:
     try:
         resp = _client.messages.create(model=_MODEL, max_tokens=64, messages=[{"role": "user", "content": content}])
     except Exception as e:
-        if "multimodal" in str(e).lower() or "400" in str(e):
+        if is_vision_unsupported(e):
             raise RuntimeError(
                 f"当前模型 {_MODEL!r} 不支持视觉输入，无法使用 Browser+LLM Vision 路线。\n"
                 "请在 config.yaml 中配置支持多模态的模型（如 claude-sonnet-4-6）。"

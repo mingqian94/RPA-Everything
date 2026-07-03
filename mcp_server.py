@@ -41,10 +41,15 @@ server = Server("rpa-everything")
 # ── 浏览器工具 ────────────────────────────────────────────────────────
 
 async def _get_page():
-    from playwright.async_api import async_playwright
-    p = await async_playwright().start()
-    browser = await p.chromium.connect_over_cdp("http://localhost:9222")
-    return browser.contexts[0].pages[0], p
+    """复用 BrowserManager 的常驻 CDP 连接，返回当前活动标签页。
+    MCP server 是长驻进程，不必每次调用都新建/销毁 Playwright 实例。"""
+    from core.browser import BrowserManager
+    if BrowserManager._browser is None:
+        await BrowserManager._connect()
+    context = BrowserManager._browser.contexts[0]
+    if not context.pages:
+        return await context.new_page()
+    return context.pages[0]
 
 
 @server.list_tools()
@@ -219,58 +224,59 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent | type
     # ── 浏览器工具 ────────────────────────────────────────────────────
 
     if name == "browser_navigate":
-        page, pw = await _get_page()
+        page = await _get_page()
         await page.goto(arguments["url"])
-        await page.wait_for_load_state("networkidle")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=15000)
+        except Exception:
+            await page.wait_for_load_state("domcontentloaded", timeout=10000)
         title = await page.title()
-        await pw.stop()
         return [types.TextContent(type="text", text=f"已打开：{title}\n{page.url}")]
 
     if name == "browser_screenshot":
-        page, pw = await _get_page()
+        page = await _get_page()
         tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        tmp.close()
         await page.screenshot(path=tmp.name)
-        await pw.stop()
         data = base64.standard_b64encode(Path(tmp.name).read_bytes()).decode()
         Path(tmp.name).unlink(missing_ok=True)
         return [types.ImageContent(type="image", data=data, mimeType="image/png")]
 
     if name == "browser_click":
-        page, pw = await _get_page()
+        if not arguments.get("text") and not arguments.get("selector"):
+            return [types.TextContent(type="text", text="参数错误：text 和 selector 至少填一个")]
+        page = await _get_page()
         if arguments.get("text"):
             await page.click(f"text={arguments['text']}")
-        elif arguments.get("selector"):
+        else:
             await page.click(arguments["selector"])
-        await pw.stop()
         return [types.TextContent(type="text", text="已点击")]
 
     if name == "browser_type":
-        page, pw = await _get_page()
+        page = await _get_page()
         await page.fill(arguments["selector"], arguments["text"])
-        await pw.stop()
         return [types.TextContent(type="text", text="已输入")]
 
     if name == "browser_extract_text":
-        page, pw = await _get_page()
+        page = await _get_page()
         sel = arguments.get("selector")
         if sel:
             el = await page.query_selector(sel)
             text = await el.inner_text() if el else ""
         else:
             text = await page.inner_text("body")
-        await pw.stop()
         return [types.TextContent(type="text", text=text[:4000])]
 
     if name == "browser_extract_table":
-        page, pw = await _get_page()
+        page = await _get_page()
         sel = arguments.get("selector", "table")
-        rows = await page.evaluate(f"""() => {{
-            const table = document.querySelector('{sel}');
+        # 选择器作为参数传入，避免拼进 JS 字符串（含引号的选择器会导致语法错误）
+        rows = await page.evaluate("""(sel) => {
+            const table = document.querySelector(sel);
             if (!table) return [];
             const rows = Array.from(table.querySelectorAll('tr'));
             return rows.map(r => Array.from(r.querySelectorAll('th,td')).map(c => c.innerText.trim()));
-        }}""")
-        await pw.stop()
+        }""", sel)
         if not rows:
             return [types.TextContent(type="text", text="未找到表格")]
         headers, *data = rows
@@ -334,16 +340,23 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent | type
         return [types.TextContent(type="text", text="\n".join(skills) or "暂无 Skill")]
 
     if name == "skill_run":
-        import importlib, subprocess
-        result = subprocess.run(
-            [sys.executable, "run.py", arguments["skill_path"]],
-            capture_output=True, text=True, cwd=str(ROOT)
-        )
+        import subprocess
+        try:
+            result = subprocess.run(
+                [sys.executable, "run.py", arguments["skill_path"]],
+                capture_output=True, text=True, cwd=str(ROOT), timeout=300,
+            )
+        except subprocess.TimeoutExpired:
+            return [types.TextContent(type="text", text="Skill 运行超时（300 秒），已终止")]
         output = result.stdout + result.stderr
         return [types.TextContent(type="text", text=output or "运行完成")]
 
     if name == "skill_save":
-        skill_path = ROOT / "skills" / f"{arguments['name']}.py"
+        skills_dir = (ROOT / "skills").resolve()
+        skill_path = (skills_dir / f"{arguments['name']}.py").resolve()
+        # name 由 LLM 生成，必须限制在 skills/ 内，防止路径穿越写到任意位置
+        if not skill_path.is_relative_to(skills_dir):
+            return [types.TextContent(type="text", text=f"非法 Skill 名称：{arguments['name']}（不允许跳出 skills/ 目录）")]
         skill_path.parent.mkdir(parents=True, exist_ok=True)
         skill_path.write_text(arguments["code"], encoding="utf-8")
         return [types.TextContent(type="text", text=f"已保存：{skill_path}\n运行：python run.py skills/{arguments['name']}")]
@@ -363,7 +376,10 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent | type
             cmd += ["--export", export]
         if sop:
             cmd += ["--sop", sop]
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT), timeout=600)
+        except subprocess.TimeoutExpired:
+            return [types.TextContent(type="text", text="Harness 执行超时（600 秒），已终止")]
         output = (result.stdout + result.stderr).strip()
         return [types.TextContent(type="text", text=output or "执行完成")]
 

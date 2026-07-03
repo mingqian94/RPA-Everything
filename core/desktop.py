@@ -39,7 +39,9 @@ if _IS_WINDOWS:
 def screenshot(save_path: str = None) -> str:
     """截取全屏，返回保存路径。macOS 优先用 screencapture，其次 pyautogui。"""
     if save_path is None:
-        save_path = tempfile.mktemp(suffix=".png")
+        fd, save_path = tempfile.mkstemp(suffix=".png")
+        import os as _os
+        _os.close(fd)
 
     if _IS_MAC:
         ret = subprocess.run(["screencapture", "-x", save_path], capture_output=True)
@@ -171,7 +173,17 @@ def press(key: str):
 # ── 窗口坐标工具 ────────────────────────────────────────────────────
 
 def get_window_origin(app_name: str) -> tuple[int, int]:
-    """返回指定应用窗口左上角的屏幕坐标（逻辑像素）。仅 macOS。"""
+    """返回指定应用窗口左上角的屏幕坐标（逻辑像素）。macOS 用 System Events，
+    Windows 用 pygetwindow 按标题匹配。都找不到时返回 (0, 0)。"""
+    if _IS_WINDOWS:
+        try:
+            import pygetwindow as gw
+            wins = gw.getWindowsWithTitle(app_name)
+            if wins:
+                return wins[0].left, wins[0].top
+        except Exception:
+            pass
+        return (0, 0)
     if not _IS_MAC:
         return (0, 0)
     script = f'''

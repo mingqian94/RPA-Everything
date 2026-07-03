@@ -65,9 +65,10 @@ class SkillLogger:
             if "error" in result:
                 error_body = str(result["error"])
         elif isinstance(result, str):
-            # result 是字符串且包含失败关键词
-            lower = result.lower()
-            if "error" in lower or "失败" in result:
+            # result 是字符串且包含失败关键词。用词边界匹配 error，
+            # 避免 "0 errors"、"error-free" 这类正常文案触发误报。
+            import re
+            if re.search(r"\berror\b", result, re.IGNORECASE) or "失败" in result:
                 error_body = result
 
         if error_body is not None:
