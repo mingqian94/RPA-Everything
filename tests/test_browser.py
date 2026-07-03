@@ -25,14 +25,23 @@ def test_chrome_cdp_reachable():
     assert isinstance(pages, list) and len(pages) > 0
 
 
-def test_extract_table_public_url():
-    """extract_table 能从公开 URL 提取 HTML 表格，返回 JSON。"""
+def test_extract_table_local_html(tmp_path):
+    """extract_table 能从 HTML 表格提取数据，返回 JSON。
+    用本地文件而非公开 URL——外网在 CI/部分网络环境不可达，测试会白挂。"""
+    html = tmp_path / "table.html"
+    html.write_text(
+        "<html><body><table>"
+        "<tr><th>Company</th><th>Price</th></tr>"
+        "<tr><td>Acme</td><td>100</td></tr>"
+        "</table></body></html>",
+        encoding="utf-8",
+    )
     result = subprocess.run(
         [sys.executable, "run.py", "showcase/web/extract_table",
-         "--", "--url", "https://www.w3schools.com/html/html_tables.asp"],
-        capture_output=True, text=True, cwd=str(ROOT), timeout=30,
+         "--", "--url", html.as_uri()],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=str(ROOT), timeout=60,
     )
     assert result.returncode == 0, f"stderr: {result.stderr}"
-    # 输出里应包含 JSON 数组（表格行）
     output = result.stdout
-    assert "[" in output or "Company" in output, f"意外输出：{output[:200]}"
+    assert "Acme" in output and "Company" in output, f"意外输出：{output[:200]}"
