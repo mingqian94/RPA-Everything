@@ -75,7 +75,8 @@ python run.py <skill>   # scheduled / on-demand, no AI involved
 ```
 rpa-everything/
 ├── core/                    # Generic capability layer (business-agnostic)
-│   ├── browser.py           # Web automation (Playwright, reuses your logged-in Chrome)
+│   ├── browser.py           # Web automation (Playwright, reuses your logged-in Chrome); is_logged_in() for httpOnly session cookies
+│   ├── intercept.py         # Capture API responses via fetch/XHR hooks (for pages that load data by background requests)
 │   ├── desktop.py           # Desktop automation (macOS: screencapture + pyautogui; Windows: pywinauto)
 │   ├── llm.py               # Claude API (decisions / content generation / vision fallback)
 │   ├── agent.py             # Agentic loop (run_browser / run_desktop)

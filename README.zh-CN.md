@@ -75,7 +75,8 @@ python run.py <skill>   # 定时/按需执行，不再调 AI
 ```
 rpa-everything/
 ├── core/                    # 通用能力层（与业务无关）
-│   ├── browser.py           # Web 自动化（Playwright，复用已登录 Chrome）
+│   ├── browser.py           # Web 自动化（Playwright，复用已登录 Chrome）；is_logged_in() 判断 httpOnly 会话 cookie
+│   ├── intercept.py         # 拦截页面 API 响应（fetch/XHR 双 hook，用于数据靠后台请求加载的页面）
 │   ├── desktop.py           # 桌面自动化（macOS: screencapture + pyautogui；Windows: pywinauto）
 │   ├── llm.py               # Claude API（判断 / 生成内容 / 视觉兜底）
 │   ├── agent.py             # Agentic loop（run_browser / run_desktop）

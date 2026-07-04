@@ -31,6 +31,7 @@ import asyncio
 from collections import defaultdict
 from datetime import date, datetime, timezone, timedelta
 
+from core import intercept
 from core.browser import BrowserManager
 from core.config import get
 from core.logger import SkillLogger
@@ -85,23 +86,9 @@ def _parse_item(raw: dict, fields: dict) -> dict | None:
 
 
 async def _collect_items(page, view_url: str, project_key: str) -> list[dict]:
-    await page.add_init_script("""
-    window.__rpa_items = [];
-    const _orig = window.fetch;
-    window.fetch = async function(...args) {
-        const url = (typeof args[0] === 'string') ? args[0] : (args[0].url || '');
-        const resp = await _orig.apply(this, args);
-        if (url.includes('mget_ui_async')) {
-            try {
-                const clone = resp.clone();
-                const body = await clone.json();
-                const detail = (body?.data?.work_item_detail_v2?.['1']) || {};
-                window.__rpa_items.push(...Object.values(detail));
-            } catch(e) {}
-        }
-        return resp;
-    };
-    """)
+    # 通用拦截器（core.intercept）负责 hook fetch/XHR + 轮询稳定；
+    # 本 Skill 只关心飞书特有的接口名和数据结构
+    await intercept.install(page)
 
     try:
         await page.goto(view_url)
@@ -109,22 +96,15 @@ async def _collect_items(page, view_url: str, project_key: str) -> list[dict]:
     except Exception:
         await page.wait_for_load_state("domcontentloaded")
 
-    # 轮询拦截结果直到数量稳定（连续 2 次不变且非空），替代固定 sleep：
-    # 网络慢时固定等待会漏数据，网络快时白等
-    deadline = asyncio.get_event_loop().time() + 20
-    prev, stable = -1, 0
-    while asyncio.get_event_loop().time() < deadline:
-        count = await page.evaluate("(window.__rpa_items || []).length")
-        if count > 0 and count == prev:
-            stable += 1
-            if stable >= 2:
-                break
-        else:
-            stable = 0
-        prev = count
-        await asyncio.sleep(0.5)
+    responses = await intercept.collect(page, "mget_ui_async", settle_polls=2)
 
-    raw_items = await page.evaluate("window.__rpa_items || []")
+    # 从 mget_ui_async 响应里取出 work_item 明细
+    raw_items = []
+    for r in responses:
+        detail = (((r["json"] or {}).get("data", {})
+                   .get("work_item_detail_v2", {}) or {}).get("1", {})) or {}
+        raw_items.extend(detail.values())
+
     if not raw_items:
         print(
             "⚠️  未拦截到任何 mget_ui_async 响应。可能原因：\n"

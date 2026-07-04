@@ -73,6 +73,22 @@ class BrowserManager:
             cls._playwright = None
 
 
+async def is_logged_in(page: Page, cookie_name: str, url: str | None = None) -> bool:
+    """Whether a (possibly httpOnly) session cookie is present.
+    是否存在指定的（可能是 httpOnly 的）会话 cookie。
+
+    Read cookies from the browser via ``context.cookies()`` rather than JS
+    ``document.cookie`` — login/session cookies are usually httpOnly and hidden
+    from JS, so a document.cookie check would report a logged-in user as logged out.
+    通过 ``context.cookies()`` 从浏览器层读取，而不是 JS 的 ``document.cookie``——
+    登录/会话 cookie 通常是 httpOnly、对 JS 不可见，用 document.cookie 会把已登录误判成未登录。
+
+    ``url`` optionally scopes the cookie lookup to one origin (e.g. "https://x.com").
+    ``url`` 可选，把 cookie 查询限定到某个源。"""
+    cookies = await (page.context.cookies(url) if url else page.context.cookies())
+    return any(c.get("name") == cookie_name and c.get("value") for c in cookies)
+
+
 async def is_login_page(page: Page) -> bool:
     """截图后问 LLM 当前是否是登录 / 认证页面。"""
     import tempfile
