@@ -13,6 +13,8 @@ from playwright.async_api import async_playwright, Page, Browser
 from core.config import get as _cfg_get
 
 def _cdp_url() -> str:
+    # 用 localhost 而非写死 127.0.0.1：Chrome 的调试端口可能只监听
+    # IPv6 回环（[::1]:9222，Windows 实测），localhost 能解析到正确协议栈
     return _cfg_get("browser.cdp_url") or "http://localhost:9222"
 
 _HINT = """
@@ -33,7 +35,11 @@ class BrowserManager:
         if cls._playwright is None:
             cls._playwright = await async_playwright().start()
         try:
-            cls._browser = await cls._playwright.chromium.connect_over_cdp(_cdp_url())
+            # 加超时：websocket 能连上、但 Chrome 里有卡死的标签页时，
+            # connect_over_cdp 枚举页面会一直挂着（默认 180s）。快速失败更好排查。
+            cls._browser = await cls._playwright.chromium.connect_over_cdp(
+                _cdp_url(), timeout=20000
+            )
         except Exception as e:
             raise RuntimeError(f"{_HINT}\n（原始错误：{type(e).__name__}: {e}）") from e
 
