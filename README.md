@@ -78,8 +78,9 @@ rpa-everything/
 │   ├── browser.py           # Web automation (Playwright, reuses your logged-in Chrome); is_logged_in() for httpOnly session cookies
 │   ├── intercept.py         # Capture API responses via fetch/XHR hooks (for pages that load data by background requests)
 │   ├── desktop.py           # Desktop automation (macOS: screencapture + pyautogui; Windows: pywinauto)
+│   ├── android.py           # Android automation through ADB (PC operates phone)
 │   ├── llm.py               # Claude API (decisions / content generation / vision fallback)
-│   ├── agent.py             # Agentic loop (run_browser / run_desktop)
+│   ├── agent.py             # Agentic loop (run_browser / run_desktop / run_android)
 │   ├── tools.py             # Single source of truth for tool schemas (shared by agent loop & MCP Server)
 │   ├── skills.py            # Skill discovery & saving (shared by run.py / MCP / generator)
 │   ├── config.py            # Config access (config.yaml + environment variables)
@@ -100,6 +101,8 @@ rpa-everything/
 │   │   └── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
 │   ├── app/
 │   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
+│   ├── android/
+│   │   └── adb_basics/      # Android ADB basics: devices, screenshots, taps, swipes, push files
 │   └── office/              # Pure file-format operations — no screen needed, server-friendly
 │       ├── excel_toolkit/   # Excel read/write (openpyxl)
 │       ├── ppt_generator/   # Generate PPT from structured content (python-pptx)
@@ -137,6 +140,7 @@ Different Skill types have different environment requirements:
 | **Office files** | Excel/PPT/Word read & write | ✅ Yes | Pure file-format operations, the app never opens |
 | **Browser** | CRM queries, HR systems | ⚠️ Needs local Chrome | Depends on your logged-in Chrome session |
 | **Desktop** | Feishu/DingTalk native apps | ❌ Local only | Needs a physical screen and foreground window |
+| **Android phone** | Phone apps, mobile-only flows | ⚠️ Needs local ADB connection | PC drives a real Android device through ADB |
 
 **Deployment advice:**
 
@@ -162,6 +166,7 @@ When mixing API and UI Skills, split the flow: run UI steps locally, publish res
 | **Electron apps** | Feishu/DingTalk desktop | Playwright via debug port | `core/browser.py` |
 | **Windows native apps** | Local desktop software | pywinauto UI Automation | `core/desktop.py` |
 | **Any desktop app (fallback)** | Feishu, DingTalk, etc. | PyAutoGUI + image template matching; CJK input via clipboard paste | `core/desktop.py` |
+| **Android apps** | Mobile apps, phone-only workflows | ADB screenshots/taps/swipes/keyevents/file push | `core/android.py` |
 
 ### Element-location fallback chain
 
@@ -365,9 +370,9 @@ Edit `~/.claude/claude_desktop_config.json` (create it if missing):
 
 Restart Claude Desktop; the `rpa-everything` toolbox appearing in the sidebar means you're connected.
 
-### Available tools (16)
+### Available tools (24)
 
-Browser and desktop tools share one schema definition with the agentic loop (`core/tools.py`), so they can't drift apart.
+Browser, desktop, and Android tools share one schema definition with the agentic loop (`core/tools.py`), so they can't drift apart.
 
 **Browser**
 
@@ -390,6 +395,19 @@ Browser and desktop tools share one schema definition with the agentic loop (`co
 | `desktop_type` | Type text (CJK goes through clipboard paste) |
 | `desktop_hotkey` | Send a keyboard shortcut, e.g. `command+v`, `ctrl+c` |
 | `desktop_find_click` | Screenshot → LLM vision locates the element → click |
+
+**Android**
+
+| Tool | Description |
+|---|---|
+| `android_devices` | List connected ADB devices |
+| `android_screenshot` | Screenshot a connected Android device |
+| `android_tap` | Tap by pixels or normalized screen ratio |
+| `android_swipe` | Swipe by pixels or normalized screen ratio |
+| `android_key` | Send an Android keyevent, e.g. `KEYCODE_BACK` |
+| `android_type` | Type text; `unicode=true` uses ADBKeyboard broadcast input |
+| `android_push_file` | Push a file to the device, optionally trigger media scan |
+| `android_diagnostics` | Check ADB availability, device state, resolution, and screenshot permission |
 
 **Skill management**
 
@@ -436,6 +454,7 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 | `showcase/web/extract_table` | Browser DOM | ✅ Runnable | `--url https://www.w3schools.com/html/html_tables.asp` |
 | `showcase/web/click_by_vision` | Browser + LLM Vision | ✅ Runnable | `model: global.anthropic.claude-sonnet-4-6` in config.yaml |
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
+| `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |

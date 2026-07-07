@@ -43,3 +43,9 @@ feishu_project:
   view_url: ""       # 如 https://project.feishu.cn/your-project/storyView/Xxx
   project_key: ""    # 如 625eb563ac5fd9b734b47a5d
   due_field_id: ""   # 如 a817fb（业务期望交付日期字段 ID，没有可留空）
+
+# ── Android ADB（可选）──────────────────────────────────────────────────────
+# Optional Android ADB configuration. Leave empty to use adb from PATH.
+# Android ADB 可选配置；留空时使用 PATH 中的 adb。
+android:
+  adb_path: ""                      # 例如 D:\Android\platform-tools\adb.exe

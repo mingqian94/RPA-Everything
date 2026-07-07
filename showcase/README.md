@@ -41,3 +41,18 @@
 - 在本文件表格中补充说明一行
 
 详见 [CONTRIBUTING.md](../CONTRIBUTING.md)。
+
+## Android
+
+Android skills drive a connected Android device through ADB. This is the
+"PC operates phone" route, separate from browser and desktop automation.
+
+Android Skill 通过 ADB 操作已连接的 Android 设备，对应“电脑操作手机”的路线，和浏览器、桌面自动化是并列的框架能力。
+
+| Skill | Description | Needs LLM | Command |
+|---|---|---|---|
+| `android/adb_basics` | List devices, screenshot, tap/swipe by ratio, send key events, push files, diagnostics | No | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
+
+| Skill | 说明 | 需要 LLM | 运行命令 |
+|---|---|---|---|
+| `android/adb_basics` | 设备列表、截图、按比例点击/滑动、发送按键、推送文件、基础诊断 | 否 | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |

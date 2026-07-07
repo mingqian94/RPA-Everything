@@ -33,8 +33,10 @@ from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 
 from core.tools import (
+    ANDROID_TOOLS,
     BROWSER_TOOLS,
     DESKTOP_TOOLS,
+    execute_android_tool,
     execute_browser_tool,
     execute_desktop_tool,
 )
@@ -44,8 +46,10 @@ server = Server("rpa-everything")
 # task_complete 是 agentic loop 的终止信号，对 MCP 客户端没有意义
 _SHARED_BROWSER = [t for t in BROWSER_TOOLS if t["name"] != "task_complete"]
 _SHARED_DESKTOP = [t for t in DESKTOP_TOOLS if t["name"] != "task_complete"]
+_SHARED_ANDROID = [t for t in ANDROID_TOOLS if t["name"] != "task_complete"]
 _BROWSER_NAMES = {t["name"] for t in _SHARED_BROWSER}
 _DESKTOP_NAMES = {t["name"] for t in _SHARED_DESKTOP}
+_ANDROID_NAMES = {t["name"] for t in _SHARED_ANDROID}
 
 # ── MCP 特有工具（Claude schema 格式，与 core/tools.py 保持一致的写法）──────────
 
@@ -138,7 +142,7 @@ def _text(msg: str) -> list[types.TextContent]:
 
 @server.list_tools()
 async def list_tools() -> list[types.Tool]:
-    return [_to_mcp_tool(t) for t in _SHARED_BROWSER + _SHARED_DESKTOP + _MCP_ONLY_TOOLS]
+    return [_to_mcp_tool(t) for t in _SHARED_BROWSER + _SHARED_DESKTOP + _SHARED_ANDROID + _MCP_ONLY_TOOLS]
 
 
 # ── MCP 特有工具的 handler ────────────────────────────────────────────────────
@@ -233,6 +237,10 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent | type
 
         if name in _DESKTOP_NAMES:
             content = await asyncio.to_thread(execute_desktop_tool, name, arguments)
+            return _to_mcp_content(content)
+
+        if name in _ANDROID_NAMES:
+            content = await asyncio.to_thread(execute_android_tool, name, arguments)
             return _to_mcp_content(content)
 
         handler = _HANDLERS.get(name)

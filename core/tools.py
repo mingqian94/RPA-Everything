@@ -148,6 +148,117 @@ DESKTOP_TOOLS = [
 
 # ── 工具执行器 ────────────────────────────────────────────────────────────────
 
+ANDROID_TOOLS = [
+    {
+        "name": "android_devices",
+        "description": "List online Android devices visible to adb.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "android_screenshot",
+        "description": "Capture a screenshot from an Android device and return it as an image.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string", "description": "ADB device serial. Defaults to the first online device."},
+            },
+        },
+    },
+    {
+        "name": "android_tap",
+        "description": "Tap an Android device by absolute pixels (x/y) or screen ratio (rx/ry).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "x": {"type": "integer"},
+                "y": {"type": "integer"},
+                "rx": {"type": "number", "description": "X ratio from 0 to 1."},
+                "ry": {"type": "number", "description": "Y ratio from 0 to 1."},
+            },
+        },
+    },
+    {
+        "name": "android_swipe",
+        "description": "Swipe on an Android device by absolute pixels or screen ratios.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "x1": {"type": "integer"},
+                "y1": {"type": "integer"},
+                "x2": {"type": "integer"},
+                "y2": {"type": "integer"},
+                "rx1": {"type": "number"},
+                "ry1": {"type": "number"},
+                "rx2": {"type": "number"},
+                "ry2": {"type": "number"},
+                "duration_ms": {"type": "integer", "default": 300},
+            },
+        },
+    },
+    {
+        "name": "android_key",
+        "description": "Send an Android keyevent, such as KEYCODE_HOME, KEYCODE_BACK, or 4.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "keycode": {"type": "string"},
+            },
+            "required": ["keycode"],
+        },
+    },
+    {
+        "name": "android_type",
+        "description": "Type text on Android. unicode=true uses ADBKeyboard's ADB_INPUT_B64 broadcast.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "text": {"type": "string"},
+                "unicode": {"type": "boolean", "default": False},
+            },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "android_push_file",
+        "description": "Push a local file to the Android device, optionally triggering a media scan.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "local_path": {"type": "string"},
+                "remote_path": {"type": "string"},
+                "media_scan": {"type": "boolean", "default": False},
+            },
+            "required": ["local_path", "remote_path"],
+        },
+    },
+    {
+        "name": "android_diagnostics",
+        "description": "Run Android automation diagnostics. Input check is opt-in because it sends HOME.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "include_input_check": {"type": "boolean", "default": False},
+            },
+        },
+    },
+    {
+        "name": "task_complete",
+        "description": "Call this when the Android task is complete.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"result": {"type": "string"}},
+            "required": ["result"],
+        },
+    },
+]
+
+
 def _img_content(path: str) -> list[dict]:
     data = base64.standard_b64encode(Path(path).read_bytes()).decode()
     Path(path).unlink(missing_ok=True)
@@ -216,6 +327,69 @@ async def execute_browser_tool(name: str, args: dict, page) -> list[dict]:
         return [{"type": "text", "text": str(result)}]
 
     return [{"type": "text", "text": f"未知工具：{name}"}]
+
+
+def execute_android_tool(name: str, args: dict) -> list[dict]:
+    import json as _json
+    import tempfile as _tempfile
+    from core.android import AndroidDevice, list_devices, run_diagnostics
+
+    if name == "android_devices":
+        devices = [d.__dict__ for d in list_devices()]
+        return [{"type": "text", "text": _json.dumps(devices, ensure_ascii=False, indent=2)}]
+
+    if name == "android_screenshot":
+        dev = AndroidDevice(serial=args.get("serial"))
+        tmp = _tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        dev.screencap_to(tmp.name)
+        return _img_content(tmp.name)
+
+    if name == "android_tap":
+        dev = AndroidDevice(serial=args.get("serial"))
+        if "rx" in args and "ry" in args:
+            dev.tap_ratio(float(args["rx"]), float(args["ry"]))
+        elif "x" in args and "y" in args:
+            dev.tap(int(args["x"]), int(args["y"]))
+        else:
+            return [{"type": "text", "text": "Error: provide x/y or rx/ry."}]
+        return [{"type": "text", "text": "Android tap complete."}]
+
+    if name == "android_swipe":
+        dev = AndroidDevice(serial=args.get("serial"))
+        duration = int(args.get("duration_ms", 300))
+        if all(k in args for k in ("rx1", "ry1", "rx2", "ry2")):
+            dev.swipe_ratio(float(args["rx1"]), float(args["ry1"]), float(args["rx2"]), float(args["ry2"]), duration)
+        elif all(k in args for k in ("x1", "y1", "x2", "y2")):
+            dev.swipe(int(args["x1"]), int(args["y1"]), int(args["x2"]), int(args["y2"]), duration)
+        else:
+            return [{"type": "text", "text": "Error: provide x1/y1/x2/y2 or rx1/ry1/rx2/ry2."}]
+        return [{"type": "text", "text": "Android swipe complete."}]
+
+    if name == "android_key":
+        dev = AndroidDevice(serial=args.get("serial"))
+        dev.key(args["keycode"])
+        return [{"type": "text", "text": f"Android key sent: {args['keycode']}"}]
+
+    if name == "android_type":
+        dev = AndroidDevice(serial=args.get("serial"))
+        dev.input_text(args["text"], unicode=bool(args.get("unicode", False)))
+        return [{"type": "text", "text": "Android text input complete."}]
+
+    if name == "android_push_file":
+        dev = AndroidDevice(serial=args.get("serial"))
+        dev.push(args["local_path"], args["remote_path"])
+        if args.get("media_scan"):
+            dev.media_scan(args["remote_path"])
+        return [{"type": "text", "text": f"Pushed to Android: {args['remote_path']}"}]
+
+    if name == "android_diagnostics":
+        results = [r.__dict__ for r in run_diagnostics(
+            serial=args.get("serial"),
+            include_input_check=bool(args.get("include_input_check", False)),
+        )]
+        return [{"type": "text", "text": _json.dumps(results, ensure_ascii=False, indent=2)}]
+
+    return [{"type": "text", "text": f"Unknown Android tool: {name}"}]
 
 
 def execute_desktop_tool(name: str, args: dict) -> list[dict]:

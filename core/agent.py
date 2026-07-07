@@ -15,7 +15,14 @@ core.agent — RPA Agent 执行单元
 
 import asyncio
 from core.llm import agent_step
-from core.tools import BROWSER_TOOLS, DESKTOP_TOOLS, execute_browser_tool, execute_desktop_tool
+from core.tools import (
+    ANDROID_TOOLS,
+    BROWSER_TOOLS,
+    DESKTOP_TOOLS,
+    execute_android_tool,
+    execute_browser_tool,
+    execute_desktop_tool,
+)
 
 async def _pause_if_login_required(page) -> None:
     """导航后检测是否跳到了登录页，若是则暂停等用户手动登录。"""
@@ -180,3 +187,48 @@ async def run_desktop(goal: str) -> dict:
             messages.append({"role": "user", "content": tool_results})
 
     return {"status": "error", "error": f"超过最大步数 {MAX_STEPS}"}
+async def run_android(goal: str) -> dict:
+    """Run a subagent with Android/ADB tools."""
+    messages = [{"role": "user", "content": goal}]
+    consecutive_screenshots = 0
+
+    for step in range(MAX_STEPS):
+        resp = await _call(messages, ANDROID_TOOLS)
+        messages.append({"role": "assistant", "content": resp.content})
+
+        if resp.stop_reason == "end_turn":
+            text = next((b.text for b in resp.content if hasattr(b, "text")), "done")
+            return {"status": "ok", "result": text}
+
+        if resp.stop_reason != "tool_use":
+            return {"status": "error", "error": f"Unexpected stop_reason: {resp.stop_reason}"}
+
+        tool_results = []
+        for block in resp.content:
+            if block.type != "tool_use":
+                continue
+            if block.name == "task_complete":
+                return {"status": "ok", "result": block.input.get("result", "done")}
+            if block.name == "android_screenshot":
+                consecutive_screenshots += 1
+                if consecutive_screenshots >= 5:
+                    return {"status": "error", "error": "Agent is stuck taking Android screenshots repeatedly."}
+            else:
+                consecutive_screenshots = 0
+            try:
+                content = await asyncio.to_thread(execute_android_tool, block.name, block.input)
+                is_error = False
+            except Exception as e:
+                content = [{"type": "text", "text": f"Tool call failed: {e}"}]
+                is_error = True
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": block.id,
+                "content": content,
+                "is_error": is_error,
+            })
+
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+
+    return {"status": "error", "error": f"Exceeded max steps: {MAX_STEPS}"}
