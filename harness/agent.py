@@ -24,6 +24,7 @@ RPA Harness Agent
 import asyncio
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
@@ -32,7 +33,7 @@ sys.path.insert(0, str(ROOT))
 from core.llm import agent_step
 from core.browser import BrowserManager
 from core.logger import SkillLogger
-from core.agent import run_browser, run_desktop
+from core.agent import run_android, run_browser, run_desktop
 
 # ── 技能注册表 ────────────────────────────────────────────────────────────────
 # type 决定用哪种 subagent；hint 是给 subagent 的上下文提示
@@ -41,6 +42,40 @@ SKILL_REGISTRY = {
         "type": "browser",
         "description": "从网页 HTML 表格提取数据并返回",
         "hint": "目标 URL 在 goal 中指定；用 browser_evaluate 提取 table 内容",
+    },
+    "browser_explore": {
+        "type": "browser",
+        "description": "探索一个网页或浏览器系统，完成点击、输入、截图、文本/表格提取等通用浏览器任务",
+        "hint": (
+            "优先使用 DOM/CSS/文本定位；每个关键操作后截图或提取文本确认结果；"
+            "如果目标是沉淀 Skill，记录稳定 selector 和必要前置登录状态"
+        ),
+    },
+    "desktop_explore": {
+        "type": "desktop",
+        "description": "探索本机桌面应用，完成截图、点击、输入、快捷键等通用桌面任务",
+        "hint": (
+            "先截图确认当前窗口和目标元素；中文输入走剪贴板；关键结果要截图确认。"
+            "如果是长期复用流程，优先沉淀成模板匹配或确定性窗口操作，不要依赖一次性坐标"
+        ),
+    },
+    "android_explore": {
+        "type": "android",
+        "description": "探索已连接 Android 手机，完成设备发现、截图、点击、滑动、按键、输入和文件推送",
+        "hint": (
+            "先调用 android_devices / android_diagnostics 确认设备在线；"
+            "优先使用 0~1 屏幕比例坐标，避免写死像素；"
+            "中文、emoji、换行文本用 android_type unicode=true；"
+            "真实外部副作用（发布/发送/付款等）完成后只标记待确认，除非有明确成功信号"
+        ),
+    },
+    "android_diagnostics": {
+        "type": "android",
+        "description": "检查 Android 自动化前置条件：ADB 连接、截图、可选输入注入、文件推送等",
+        "hint": (
+            "先列出设备，再运行 android_diagnostics；"
+            "默认不要启用输入检查，除非用户明确允许，因为 include_input_check 会发送 HOME"
+        ),
     },
     "feishu_post": {
         "type": "desktop",
@@ -95,7 +130,14 @@ def plan(goal: str) -> list[dict]:
         ensure_ascii=False,
         indent=2,
     )
-    prompt = f"""你是 RPA 任务规划器。将用户目标分解为子任务序列，调用 submit_plan 提交。
+    prompt = f"""你是 RPA Harness 任务规划器。将用户目标分解为子任务序列，调用 submit_plan 提交。
+
+规划原则：
+- skill 必须来自可用技能列表，不要发明技能名。
+- 目标明确属于网页/浏览器时选 browser_*；属于本机应用时选 desktop_*；属于手机/Android/ADB 时选 android_*。
+- 用户目标是先确认环境、设备、权限是否可用时，优先规划 diagnostics 类任务。
+- 真实外部副作用场景（发布、发送、审批、付款等）要在 goal 中要求执行后验证；没有确定成功信号时说明“待确认”。
+- 浏览器任务共享 Chrome，不要并发；桌面和 Android 操作通常也不要并发，除非目标明确是互不影响的检查。
 
 可用技能：
 {registry_desc}
@@ -149,8 +191,12 @@ async def _run_task(task: dict, log: SkillLogger) -> dict:
                     result = await run_browser(full_goal, page)
                 finally:
                     await page.close()
-            else:
+            elif spec["type"] == "desktop":
                 result = await run_desktop(full_goal)
+            elif spec["type"] == "android":
+                result = await run_android(full_goal)
+            else:
+                result = {"status": "error", "error": f"不支持的技能类型：{spec['type']}"}
         except Exception as e:
             result = {"status": "error", "error": f"{type(e).__name__}: {e}"}
 
@@ -210,14 +256,19 @@ async def _verify_and_confirm(sop: str, tasks: list[dict]) -> bool:
     ctx = VerifyContext()
     print("\n🔍 正在截图验证结果...", flush=True)
 
-    has_browser_task = any(
-        SKILL_REGISTRY.get(t.get("skill"), {}).get("type") == "browser" for t in tasks
-    )
+    task_types = {SKILL_REGISTRY.get(t.get("skill"), {}).get("type") for t in tasks}
 
     try:
-        if has_browser_task:
+        if "browser" in task_types:
             page = await BrowserManager.current_page()
             shot = await ctx.browser_screenshot(page)
+        elif "android" in task_types:
+            import os
+            from core.android import AndroidDevice
+
+            fd, shot = tempfile.mkstemp(suffix=".png")
+            os.close(fd)
+            AndroidDevice().screencap_to(shot)
         else:
             shot = ctx.desktop_screenshot()
         verdict = ctx.judge(sop, shot)
@@ -258,13 +309,14 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
         f'原始目标：{goal}',
         '',
         '固化步骤：',
-        '  1. 把每个 TODO 替换成确定性 Playwright/桌面代码',
+        '  1. 把每个 TODO 替换成确定性 Playwright / desktop.py / android.py 代码',
         f'  2. python run.py {path.with_suffix("").as_posix().replace(str(Path.cwd()) + "/", "")} 验证',
         f'  3. sh tools/cron_helper.sh {path.with_suffix("").as_posix()} "0 9 * * 1-5"',
         '"""',
         '',
         'import asyncio',
         'from core.browser import open_page',
+        'from core.android import AndroidDevice',
         'from core.logger import SkillLogger',
         '',
         '',
@@ -298,9 +350,26 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
                 '    pass',
                 '',
             ]
-        else:
+        elif task_type == "desktop":
             lines += [
                 '    # TODO: 替换为确定性桌面自动化（pyautogui / desktop.py）',
+                '    pass',
+                '',
+            ]
+        elif task_type == "android":
+            lines += [
+                '    # TODO: 替换为确定性 Android 自动化（ADB / android.py）',
+                '    # dev = AndroidDevice()',
+                '    # dev.ensure_online()',
+                '    # dev.screencap_to("logs/android_before.png")',
+                '    # dev.tap_ratio(0.5, 0.5)',
+                '    # 真实外部副作用完成后，如无明确成功信号，请记录为“待确认”',
+                '    pass',
+                '',
+            ]
+        else:
+            lines += [
+                f'    # TODO: 未知技能类型 {task_type!r}，请手工补齐',
                 '    pass',
                 '',
             ]

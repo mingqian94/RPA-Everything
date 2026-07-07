@@ -1,5 +1,6 @@
 """harness plan() 的单元测试（mock LLM，验证结构化输出解析）。"""
 
+import asyncio
 import pytest
 
 from harness import agent as harness
@@ -56,3 +57,50 @@ def test_plan_empty_tasks_raises(monkeypatch):
     )
     with pytest.raises(ValueError, match="规划失败"):
         harness.plan("目标")
+
+
+@pytest.mark.unit
+def test_android_skills_registered():
+    assert harness.SKILL_REGISTRY["android_explore"]["type"] == "android"
+    assert harness.SKILL_REGISTRY["android_diagnostics"]["type"] == "android"
+
+
+@pytest.mark.unit
+def test_run_task_dispatches_android(monkeypatch):
+    calls = []
+
+    async def fake_run_android(goal):
+        calls.append(goal)
+        return {"status": "ok", "result": "android done"}
+
+    class FakeLog:
+        def step(self, msg):
+            pass
+
+    monkeypatch.setattr(harness, "run_android", fake_run_android)
+    result = asyncio.run(harness._run_task({
+        "skill": "android_explore",
+        "goal": "打开手机并截图",
+        "label": "手机探索",
+    }, FakeLog()))
+
+    assert result["status"] == "ok"
+    assert result["skill"] == "android_explore"
+    assert "android_devices" in calls[0]
+    assert "屏幕比例坐标" in calls[0]
+
+
+@pytest.mark.unit
+def test_export_plan_includes_android_template(tmp_path):
+    out = tmp_path / "android_flow.py"
+    harness.export_plan("操作手机", [{
+        "skill": "android_explore",
+        "goal": "截图后点击中间",
+        "label": "手机步骤",
+    }], str(out))
+
+    text = out.read_text(encoding="utf-8")
+    assert "from core.android import AndroidDevice" in text
+    assert "dev = AndroidDevice()" in text
+    assert "tap_ratio" in text
+    assert "待确认" in text
