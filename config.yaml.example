@@ -4,7 +4,7 @@
 
 # ── LLM ──────────────────────────────────────────────────────────────────────
 llm:
-  api_key: "sk-ant-..."          # Anthropic API Key，或内部 AI 网关的 Key
+  api_key: "<your-anthropic-api-key>"  # Anthropic API Key，或内部 AI 网关的 Key
   base_url: ""                   # 留空直连 Anthropic；填内部网关地址则走网关
   model: "claude-haiku-4-5-20251001"  # 直连 Anthropic 时的模型名
   # 内部 AI 网关需加前缀，例如：global.anthropic.claude-sonnet-4-6

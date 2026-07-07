@@ -226,7 +226,7 @@ brew install python@3.12
 复制 `config.yaml` 并填写，或设置环境变量：
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export ANTHROPIC_API_KEY=<your-anthropic-api-key>
 ```
 
 ### 3. 启动 Chrome（复用已登录状态）

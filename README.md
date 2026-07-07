@@ -222,7 +222,7 @@ Also grant your terminal Screen Recording permission in System Settings → Priv
 Copy `config.yaml` and fill it in, or use environment variables:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export ANTHROPIC_API_KEY=<your-anthropic-api-key>
 ```
 
 ### 3. Launch Chrome (reusing your logged-in session)
