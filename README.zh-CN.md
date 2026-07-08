@@ -452,6 +452,8 @@ Claude: desktop_screenshot → 识别输入框位置 → desktop_click → deskt
 
 ### 安全边界
 
+完整安全策略见 [SECURITY.md](SECURITY.md)：密钥、本地数据、Prompt Injection、真实外部副作用、Android/桌面操作风险和提交前扫描。
+
 MCP Server 把「操作屏幕、写入并运行代码」的能力交给了 LLM，这意味着**模型读到的任何内容（包括网页正文）都可能间接影响它调用工具的方式**（prompt injection）。使用时请注意：
 
 - 探索阶段让 Claude 操作**不可信网页**时，留意它发起的 `skill_save` / `skill_run` 调用是否符合你的意图，Claude Desktop 的工具确认弹窗不要盲目放行

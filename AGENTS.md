@@ -115,6 +115,17 @@ python run.py
 
 ---
 
+## 安全策略
+
+完整策略见 `SECURITY.md`。默认原则：
+
+- 探索模式会让 LLM 操作浏览器、桌面或 Android，必须警惕网页/应用内容里的 Prompt Injection。
+- 发布、发送、审批、付款、删除、修改远端数据等真实外部副作用必须显式使用 `--confirm-external`。
+- 密钥、账号、客户数据、Cookie、Token、私有 URL 不得写入 Skill、测试、文档或截图。
+- 分享 `logs/`、`data/outputs/` 前先检查是否包含页面文本、URL、截图或个人数据。
+
+---
+
 ## 前置条件
 
 在调用任何工具前，确认以下条件满足：

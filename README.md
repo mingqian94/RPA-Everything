@@ -448,6 +448,8 @@ Claude: desktop_screenshot → locate the input box → desktop_click → deskto
 
 ### Security boundaries
 
+See [SECURITY.md](SECURITY.md) for the full policy: secrets, local data, prompt injection, external side effects, desktop/Android risks, and pre-commit scans.
+
 The MCP Server hands the LLM the ability to *operate your screen and write & run code*. That means **anything the model reads — including web page content — can indirectly influence its tool calls** (prompt injection). Keep in mind:
 
 - When Claude operates **untrusted web pages** during exploration, watch the `skill_save` / `skill_run` calls it makes — don't blindly approve Claude Desktop's tool-confirmation dialogs

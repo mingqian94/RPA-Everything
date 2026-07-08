@@ -28,3 +28,12 @@ def test_xiaohongshu_showcase_tools_are_documented():
         "showcase/web/xiaohongshu/post_detail",
     ):
         assert skill in readme
+
+
+def test_security_policy_is_linked_from_agent_docs():
+    security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+    assert "External Side Effects" in security
+    assert "Prompt Injection" in security
+    for filename in ("README.md", "README.zh-CN.md", "AGENTS.md"):
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        assert "SECURITY.md" in text
