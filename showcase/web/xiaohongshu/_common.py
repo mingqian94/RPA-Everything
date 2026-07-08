@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 from core.artifacts import write_json_artifact
 from core.human import human_pause, slow_scroll_browser
-from playwright.async_api import Page
+from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
 
 XHS_HOST = "https://www.xiaohongshu.com"
 
@@ -25,12 +25,29 @@ async def slow_scroll(page: Page, rounds: int, min_wait: float = 1.4, max_wait: 
 
 
 async def goto_and_settle(page: Page, url: str) -> None:
-    await page.goto(url, wait_until="domcontentloaded", timeout=45000)
+    try:
+        await page.goto(url, wait_until="commit", timeout=45000)
+    except Exception as exc:
+        if not isinstance(exc, PlaywrightTimeoutError) and exc.__class__.__name__ != "TimeoutError":
+            raise
+        if "xiaohongshu.com" not in page.url:
+            raise
     await human_pause(2.0, 4.0)
     try:
         await page.wait_for_load_state("networkidle", timeout=12000)
     except Exception:
         pass
+
+
+async def is_login_required(page: Page) -> bool:
+    text = await page.evaluate("document.body ? document.body.innerText : ''")
+    markers = [
+        "登录后查看搜索结果",
+        "手机号登录",
+        "获取验证码",
+        "小红书如何扫码",
+    ]
+    return any(marker in text for marker in markers)
 
 
 async def collect_note_cards(page: Page, limit: int) -> list[dict]:
