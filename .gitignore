@@ -12,3 +12,4 @@ config.yaml
 .claude/
 .pytest_cache/
 tmp_pytest*/
+tools/platform-tools/

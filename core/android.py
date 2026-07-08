@@ -9,6 +9,7 @@ basic diagnostics.
 from __future__ import annotations
 
 import base64
+import platform
 import re
 import shutil
 import subprocess
@@ -18,6 +19,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from core.config import get as _cfg_get
+
+ROOT = Path(__file__).parent.parent
 
 
 class AdbError(RuntimeError):
@@ -40,6 +43,9 @@ def adb_path(explicit: str | None = None) -> str:
     configured = explicit or _cfg_get("android.adb_path")
     if configured:
         return str(Path(configured).expanduser())
+    bundled = ROOT / "tools" / "platform-tools" / ("adb.exe" if platform.system() == "Windows" else "adb")
+    if bundled.exists():
+        return str(bundled)
     found = shutil.which("adb")
     if found:
         return found

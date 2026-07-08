@@ -22,6 +22,19 @@ offline123 offline
 
 
 @pytest.mark.unit
+def test_adb_path_prefers_project_platform_tools(monkeypatch, tmp_path):
+    bundled = tmp_path / "tools" / "platform-tools" / "adb.exe"
+    bundled.parent.mkdir(parents=True)
+    bundled.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(android, "ROOT", tmp_path)
+    monkeypatch.setattr(android, "_cfg_get", lambda key: "")
+    monkeypatch.setattr(android.platform, "system", lambda: "Windows")
+
+    assert android.adb_path() == str(bundled)
+
+
+@pytest.mark.unit
 def test_list_devices_can_include_offline(monkeypatch):
     output = """List of devices attached
 abc123 offline
