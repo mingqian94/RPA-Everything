@@ -38,7 +38,7 @@ python /path/to/rpa-everything/mcp_server.py
 }
 ```
 
-**连接后可用工具（15 个）：**
+**连接后可用工具（24 个）：**
 
 | 工具 | 说明 |
 |---|---|
@@ -53,6 +53,14 @@ python /path/to/rpa-everything/mcp_server.py
 | `desktop_type` | 输入文字（中文自动走剪贴板） |
 | `desktop_hotkey` | 发送快捷键 |
 | `desktop_find_click` | 截图 → LLM 视觉识别 → 点击 |
+| `android_devices` | 列出 ADB 设备 |
+| `android_screenshot` | 截取 Android 设备屏幕 |
+| `android_tap` | 按像素坐标或屏幕比例点击 |
+| `android_swipe` | 按像素坐标或屏幕比例滑动 |
+| `android_key` | 发送 Android keyevent |
+| `android_type` | 输入文字；`unicode=true` 使用 ADBKeyboard |
+| `android_push_file` | 推送文件到设备，可选触发媒体扫描 |
+| `android_diagnostics` | 检查 ADB、设备状态、分辨率和截图权限 |
 | `skill_list` | 列出所有可用 Skill |
 | `skill_run` | 运行已保存的 Skill |
 | `skill_save` | 将代码保存为新 Skill |
@@ -69,6 +77,7 @@ python /path/to/rpa-everything/mcp_server.py
 ```bash
 python run.py showcase/web/extract_table -- --url https://example.com
 python run.py showcase/app/post_circle/post_circle -- --text "内容"
+python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
 python run.py skills/my_skill
 ```
 
@@ -105,6 +114,7 @@ python run.py
 | Chrome 以调试端口启动 | `curl -s http://localhost:9222/json` 有返回 |
 | Python 依赖已安装 | `pip install -r requirements.txt` |
 | config.yaml 已配置 | 至少填写 `llm.api_key` |
+| Android ADB 已配置（手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
 | macOS 屏幕录制权限 | 系统设置 → 隐私与安全性 → 屏幕录制 → 授权终端 |
 
 **启动 Chrome（浏览器类工具的前提）：**

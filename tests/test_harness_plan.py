@@ -63,6 +63,7 @@ def test_plan_empty_tasks_raises(monkeypatch):
 def test_android_skills_registered():
     assert harness.SKILL_REGISTRY["android_explore"]["type"] == "android"
     assert harness.SKILL_REGISTRY["android_diagnostics"]["type"] == "android"
+    assert "skill:showcase/android/xiaohongshu_note/xiaohongshu_note" in harness.SKILL_REGISTRY
 
 
 @pytest.mark.unit
@@ -104,3 +105,28 @@ def test_export_plan_includes_android_template(tmp_path):
     assert "dev = AndroidDevice()" in text
     assert "tap_ratio" in text
     assert "待确认" in text
+
+
+@pytest.mark.unit
+def test_run_task_dispatches_saved_skill(monkeypatch):
+    calls = []
+
+    async def fake_run_saved_skill(spec, task):
+        calls.append((spec, task))
+        return {"status": "ok", "result": "skill done"}
+
+    class FakeLog:
+        def step(self, msg):
+            pass
+
+    monkeypatch.setattr(harness, "_run_saved_skill", fake_run_saved_skill)
+    result = asyncio.run(harness._run_task({
+        "skill": "skill:showcase/android/xiaohongshu_note/xiaohongshu_note",
+        "goal": "生成小红书笔记草稿",
+        "args": ["--dry-run", "--profile", "data/xhs_profile.json"],
+        "label": "小红书草稿",
+    }, FakeLog()))
+
+    assert result["status"] == "ok"
+    assert calls[0][0]["type"] == "skill"
+    assert calls[0][1]["args"][0] == "--dry-run"

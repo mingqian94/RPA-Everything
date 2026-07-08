@@ -34,6 +34,7 @@ from core.llm import agent_step
 from core.browser import BrowserManager
 from core.logger import SkillLogger
 from core.agent import run_android, run_browser, run_desktop
+from core.capabilities import build_skill_registry
 
 # ── 技能注册表 ────────────────────────────────────────────────────────────────
 # type 决定用哪种 subagent；hint 是给 subagent 的上下文提示
@@ -94,6 +95,9 @@ SKILL_REGISTRY = {
     },
 }
 
+# Final planner catalog: built-ins plus auto-discovered showcase/skills.
+SKILL_REGISTRY = build_skill_registry()
+
 
 # ── 规划 ──────────────────────────────────────────────────────────────────────
 
@@ -110,6 +114,11 @@ _PLAN_TOOL = {
                     "properties": {
                         "skill": {"type": "string", "description": "技能名，必须来自可用技能列表"},
                         "goal": {"type": "string", "description": "子任务的具体目标（给 subagent 的完整指令，subagent 只看这一句话）"},
+                        "args": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "仅 skill:* 能力使用：传给 `python run.py <skill> --` 后面的 CLI 参数",
+                        },
                         "parallel": {"type": "boolean", "description": "与相邻任务并发执行。浏览器任务共享同一 Chrome 实例，不要并发"},
                         "label": {"type": "string", "description": "一句话说明"},
                     },
@@ -159,6 +168,37 @@ def plan(goal: str) -> list[dict]:
 
 # ── 执行 ──────────────────────────────────────────────────────────────────────
 
+async def _run_saved_skill(spec: dict, task: dict) -> dict:
+    """Run a discovered showcase/skills script through run.py."""
+    skill_path = spec.get("path")
+    if not skill_path:
+        return {"status": "error", "error": "skill capability is missing path"}
+
+    args = task.get("args") or []
+    if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+        return {"status": "error", "error": "skill args must be a list of strings"}
+
+    cmd = [sys.executable, "run.py", skill_path]
+    if args:
+        cmd += ["--", *args]
+
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=ROOT,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout_b, stderr_b = await proc.communicate()
+    stdout = stdout_b.decode("utf-8", "replace")
+    stderr = stderr_b.decode("utf-8", "replace")
+    if proc.returncode == 0:
+        return {"status": "ok", "result": stdout.strip() or f"Skill completed: {skill_path}"}
+    return {
+        "status": "error",
+        "error": (stderr.strip() or stdout.strip() or f"Skill failed with exit code {proc.returncode}")[:4000],
+    }
+
+
 async def _run_task(task: dict, log: SkillLogger) -> dict:
     """为一个子任务启动对应的 subagent，失败时带错误上下文自动重试一次。"""
     skill_name = task["skill"]
@@ -170,17 +210,18 @@ async def _run_task(task: dict, log: SkillLogger) -> dict:
                 "error": f"未知技能：{skill_name}"}
 
     spec = SKILL_REGISTRY[skill_name]
+    max_attempts = 1 if spec.get("type") == "skill" else MAX_ATTEMPTS
     base_goal = task["goal"]
     if spec.get("hint"):
         base_goal += f"\n\n技术提示：\n{spec['hint']}"
 
     last_error = ""
-    for attempt in range(1, MAX_ATTEMPTS + 1):
+    for attempt in range(1, max_attempts + 1):
         full_goal = base_goal
         if attempt > 1:
             full_goal += f"\n\n⚠️ 上次尝试失败，原因：{last_error}\n请换一种方式重试。"
 
-        retry_tag = f" (重试 {attempt}/{MAX_ATTEMPTS})" if attempt > 1 else ""
+        retry_tag = f" (重试 {attempt}/{max_attempts})" if attempt > 1 else ""
         log.step(f"▶ {label}{retry_tag}")
         print(f"  ▶ [{skill_name}] {label}{retry_tag}", flush=True)
 
@@ -195,6 +236,8 @@ async def _run_task(task: dict, log: SkillLogger) -> dict:
                 result = await run_desktop(full_goal)
             elif spec["type"] == "android":
                 result = await run_android(full_goal)
+            elif spec["type"] == "skill":
+                result = await _run_saved_skill(spec, task)
             else:
                 result = {"status": "error", "error": f"不支持的技能类型：{spec['type']}"}
         except Exception as e:
@@ -364,6 +407,15 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
                 '    # dev.screencap_to("logs/android_before.png")',
                 '    # dev.tap_ratio(0.5, 0.5)',
                 '    # 真实外部副作用完成后，如无明确成功信号，请记录为“待确认”',
+                '    pass',
+                '',
+            ]
+        elif task_type == "skill":
+            skill_path = spec.get("path", skill)
+            args = task.get("args") or []
+            lines += [
+                '    # TODO: 这里来自已固化 Skill，可直接调用或内联其关键逻辑',
+                f'    # python run.py {skill_path} -- {" ".join(args)}',
                 '    pass',
                 '',
             ]

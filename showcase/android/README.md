@@ -46,3 +46,17 @@ python run.py showcase/android/adb_basics/adb_basics -- --key KEYCODE_HOME
 Use `--serial <device>` when multiple devices are connected.
 
 连接多台设备时，用 `--serial <device>` 指定目标设备。
+
+## Xiaohongshu Note / 小红书笔记
+
+This showcase demonstrates a slower, safer mobile-app flow. It drafts a
+Xiaohongshu note through ADB and stops before the final publish button unless
+`--confirm-post` is explicitly provided.
+
+这个示例演示更谨慎的移动端 App 流程：通过 ADB 起草小红书笔记，默认停在最终发布前；只有显式传入
+`--confirm-post` 才会点击发布。
+
+```bash
+python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --print-example-profile
+python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
+```

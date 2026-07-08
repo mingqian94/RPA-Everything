@@ -102,7 +102,8 @@ rpa-everything/
 │   ├── app/
 │   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
 │   ├── android/
-│   │   └── adb_basics/      # Android ADB basics: devices, screenshots, taps, swipes, push files
+│   │   ├── adb_basics/      # Android ADB basics: devices, screenshots, taps, swipes, push files
+│   │   └── xiaohongshu_note/# Xiaohongshu note draft flow: slow ADB steps, stops before final publish
 │   └── office/              # Pure file-format operations — no screen needed, server-friendly
 │       ├── excel_toolkit/   # Excel read/write (openpyxl)
 │       ├── ppt_generator/   # Generate PPT from structured content (python-pptx)
@@ -314,7 +315,7 @@ sh tools/cron_helper.sh skills/my_task_daily "0 9 * * 1-5"
 | AI cost | every run | zero |
 | Best for | first walkthrough, feasibility check | scheduled production runs |
 
-**Extending the Harness:** add an entry to `SKILL_REGISTRY` in `harness/agent.py` with a `type` (browser/desktop), a `description` (for the planning LLM), and a `hint` (technical context for the executing subagent).
+**Extending the Harness:** add reusable agent capabilities in `core/capabilities.py`. Runnable scripts under `showcase/` and `skills/` are also auto-discovered as `skill:<path>` capabilities, so the planner can call solidified Skills directly when the goal matches.
 
 ---
 
@@ -455,6 +456,7 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 | `showcase/web/click_by_vision` | Browser + LLM Vision | ✅ Runnable | `model: global.anthropic.claude-sonnet-4-6` in config.yaml |
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
 | `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
+| `showcase/android/xiaohongshu_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |
