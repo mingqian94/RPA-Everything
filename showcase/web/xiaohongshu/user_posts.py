@@ -33,7 +33,7 @@ async def main():
         posts = await collect_note_cards(page, args.limit)
 
     result = {"source": "user", "url": target, "count": len(posts), "posts": posts}
-    write_json(result, args.output)
+    write_json(result, args.output, "web/xiaohongshu/user_posts")
     log.finish(result)
     return result
 

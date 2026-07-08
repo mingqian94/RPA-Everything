@@ -412,6 +412,8 @@ MCP Server 是本框架的对话入口，让用户无需写代码，通过与 Cl
 | `android_devices` | 列出已连接的 ADB 设备 |
 | `android_screenshot` | 截取已连接 Android 设备的屏幕 |
 | `android_tap` | 按像素坐标或屏幕比例点击 |
+| `android_dump_ui` | 导出 UIAutomator 节点 JSON |
+| `android_tap_element` | 按文字、resource-id 或 content-desc 点击元素 |
 | `android_swipe` | 按像素坐标或屏幕比例滑动 |
 | `android_key` | 发送 Android keyevent，如 `KEYCODE_BACK` |
 | `android_type` | 输入文字；`unicode=true` 时使用 ADBKeyboard 广播输入 |
@@ -431,6 +433,8 @@ MCP Server 是本框架的对话入口，让用户无需写代码，通过与 Cl
 | 工具 | 说明 |
 |---|---|
 | `orchestrate` | 接受自然语言目标，自动规划并执行多个 Skill；支持 `dry_run`（只规划）、`export`（导出骨架脚本）、`export_trace`（按真实工具调用导出初稿脚本）、`sop`（执行后截图验证） |
+
+Skill 运行产物默认写入 `data/outputs/<skill>/<timestamp>/`。如果需要给其他系统固定路径，使用 `--output <path>`。
 
 ### 典型使用流程
 

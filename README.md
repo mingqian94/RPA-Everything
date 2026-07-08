@@ -408,6 +408,8 @@ Browser, desktop, and Android tools share one schema definition with the agentic
 | `android_devices` | List connected ADB devices |
 | `android_screenshot` | Screenshot a connected Android device |
 | `android_tap` | Tap by pixels or normalized screen ratio |
+| `android_dump_ui` | Dump UIAutomator nodes as JSON |
+| `android_tap_element` | Tap by text, resource-id, or content-desc |
 | `android_swipe` | Swipe by pixels or normalized screen ratio |
 | `android_key` | Send an Android keyevent, e.g. `KEYCODE_BACK` |
 | `android_type` | Type text; `unicode=true` uses ADBKeyboard broadcast input |
@@ -427,6 +429,8 @@ Browser, desktop, and Android tools share one schema definition with the agentic
 | Tool | Description |
 |---|---|
 | `orchestrate` | Takes a natural-language goal, plans and executes multiple Skills; supports `dry_run` (plan only), `export` (skeleton script), `export_trace` (first-draft script from actual tool calls), `sop` (post-run screenshot verification) |
+
+Skill run artifacts should go under `data/outputs/<skill>/<timestamp>/` by default. Use `--output <path>` when a stable path is required by another system.
 
 ### Typical flows
 

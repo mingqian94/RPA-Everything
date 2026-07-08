@@ -24,7 +24,7 @@ async def main():
         await human_pause(2.0, 4.0)
         detail = await collect_post_detail(page)
 
-    write_json(detail, args.output)
+    write_json(detail, args.output, "web/xiaohongshu/post_detail")
     log.finish({"url": args.url, "images": len(detail.get("images", [])), "videos": len(detail.get("videos", []))})
     return detail
 

@@ -179,6 +179,30 @@ ANDROID_TOOLS = [
         },
     },
     {
+        "name": "android_dump_ui",
+        "description": "Dump Android UIAutomator nodes as JSON. Prefer this before screenshot-only coordinate guessing.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+            },
+        },
+    },
+    {
+        "name": "android_tap_element",
+        "description": "Tap an Android UI element by text, resource_id, or content_desc from UIAutomator.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "serial": {"type": "string"},
+                "text": {"type": "string"},
+                "resource_id": {"type": "string"},
+                "content_desc": {"type": "string"},
+                "exact": {"type": "boolean", "default": False},
+            },
+        },
+    },
+    {
         "name": "android_swipe",
         "description": "Swipe on an Android device by absolute pixels or screen ratios.",
         "input_schema": {
@@ -354,6 +378,21 @@ def execute_android_tool(name: str, args: dict) -> list[dict]:
         else:
             return [{"type": "text", "text": "Error: provide x/y or rx/ry."}]
         return [{"type": "text", "text": "Android tap complete."}]
+
+    if name == "android_dump_ui":
+        dev = AndroidDevice(serial=args.get("serial"))
+        nodes = [n.__dict__ for n in dev.ui_nodes()]
+        return [{"type": "text", "text": _json.dumps(nodes, ensure_ascii=False, indent=2)[:12000]}]
+
+    if name == "android_tap_element":
+        dev = AndroidDevice(serial=args.get("serial"))
+        node = dev.tap_ui_node(
+            text=args.get("text", ""),
+            resource_id=args.get("resource_id", ""),
+            content_desc=args.get("content_desc", ""),
+            exact=bool(args.get("exact", False)),
+        )
+        return [{"type": "text", "text": f"Android element tapped: {node.__dict__}"}]
 
     if name == "android_swipe":
         dev = AndroidDevice(serial=args.get("serial"))

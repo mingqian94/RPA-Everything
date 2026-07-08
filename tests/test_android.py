@@ -59,6 +59,36 @@ def test_tap_ratio_rejects_out_of_range(monkeypatch):
 
 
 @pytest.mark.unit
+def test_parse_ui_xml_extracts_nodes():
+    xml = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy>
+  <node text="发布" resource-id="com.app:id/publish" content-desc="send" class="android.widget.Button" clickable="true" bounds="[10,20][110,80]" />
+</hierarchy>"""
+
+    nodes = android._parse_ui_xml(xml)
+
+    assert len(nodes) == 1
+    assert nodes[0].text == "发布"
+    assert nodes[0].resource_id == "com.app:id/publish"
+    assert nodes[0].center == (60, 50)
+
+
+@pytest.mark.unit
+def test_tap_ui_node_uses_uiautomator_center(monkeypatch):
+    dev = android.AndroidDevice.__new__(android.AndroidDevice)
+    calls = []
+    monkeypatch.setattr(dev, "ui_nodes", lambda: [
+        android.AndroidUiNode(text="发布", bounds=(10, 20, 110, 80)),
+    ])
+    monkeypatch.setattr(dev, "tap", lambda x, y: calls.append((x, y)))
+
+    node = dev.tap_ui_node(text="发布", exact=True)
+
+    assert node.text == "发布"
+    assert calls == [(60, 50)]
+
+
+@pytest.mark.unit
 def test_diagnostics_returns_connection_error(monkeypatch):
     def fail_init(self, serial=None, adb=None):
         raise android.AdbError("no adb")

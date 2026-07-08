@@ -38,7 +38,7 @@ python /path/to/rpa-everything/mcp_server.py
 }
 ```
 
-**连接后可用工具（24 个）：**
+**连接后可用工具（26 个）：**
 
 | 工具 | 说明 |
 |---|---|
@@ -56,6 +56,8 @@ python /path/to/rpa-everything/mcp_server.py
 | `android_devices` | 列出 ADB 设备 |
 | `android_screenshot` | 截取 Android 设备屏幕 |
 | `android_tap` | 按像素坐标或屏幕比例点击 |
+| `android_dump_ui` | 导出 UIAutomator 节点 JSON |
+| `android_tap_element` | 按文字 / resource-id / content-desc 点击元素 |
 | `android_swipe` | 按像素坐标或屏幕比例滑动 |
 | `android_key` | 发送 Android keyevent |
 | `android_type` | 输入文字；`unicode=true` 使用 ADBKeyboard |

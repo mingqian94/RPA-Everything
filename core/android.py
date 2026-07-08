@@ -15,6 +15,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from core.config import get as _cfg_get
 
@@ -63,6 +64,50 @@ class AndroidDeviceInfo:
     state: str
     model: str = ""
     product: str = ""
+
+
+@dataclass
+class AndroidUiNode:
+    text: str = ""
+    resource_id: str = ""
+    content_desc: str = ""
+    class_name: str = ""
+    bounds: tuple[int, int, int, int] = (0, 0, 0, 0)
+    clickable: bool = False
+
+    @property
+    def center(self) -> tuple[int, int]:
+        x1, y1, x2, y2 = self.bounds
+        return ((x1 + x2) // 2, (y1 + y2) // 2)
+
+
+def _parse_bounds(raw: str) -> tuple[int, int, int, int]:
+    match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", raw or "")
+    if not match:
+        return (0, 0, 0, 0)
+    return tuple(int(part) for part in match.groups())
+
+
+def _parse_ui_xml(xml: str) -> list[AndroidUiNode]:
+    root = ET.fromstring(xml)
+    nodes: list[AndroidUiNode] = []
+    for el in root.iter("node"):
+        attrs = el.attrib
+        nodes.append(AndroidUiNode(
+            text=attrs.get("text", ""),
+            resource_id=attrs.get("resource-id", ""),
+            content_desc=attrs.get("content-desc", ""),
+            class_name=attrs.get("class", ""),
+            bounds=_parse_bounds(attrs.get("bounds", "")),
+            clickable=attrs.get("clickable") == "true",
+        ))
+    return nodes
+
+
+def _node_matches(value: str, target: str, exact: bool) -> bool:
+    if exact:
+        return value == target
+    return target in value
 
 
 def list_devices(adb: str | None = None, include_offline: bool = False) -> list[AndroidDeviceInfo]:
@@ -203,6 +248,49 @@ class AndroidDevice:
     def key(self, keycode: str) -> None:
         self.shell(f"input keyevent {keycode}")
 
+    def dump_ui_xml(self) -> str:
+        remote = "/sdcard/window_dump.xml"
+        self.shell(f"uiautomator dump {remote}", timeout=20)
+        xml = self.shell(f"cat {remote}", timeout=20)
+        self.shell(f"rm -f {remote}", timeout=10)
+        if "<hierarchy" not in xml:
+            raise AdbError(f"Unable to dump Android UI XML: {xml[:200]}")
+        return xml
+
+    def ui_nodes(self) -> list[AndroidUiNode]:
+        return _parse_ui_xml(self.dump_ui_xml())
+
+    def find_ui_node(
+        self,
+        text: str = "",
+        resource_id: str = "",
+        content_desc: str = "",
+        exact: bool = False,
+    ) -> AndroidUiNode | None:
+        for node in self.ui_nodes():
+            if text and not _node_matches(node.text, text, exact):
+                continue
+            if resource_id and not _node_matches(node.resource_id, resource_id, exact):
+                continue
+            if content_desc and not _node_matches(node.content_desc, content_desc, exact):
+                continue
+            return node
+        return None
+
+    def tap_ui_node(
+        self,
+        text: str = "",
+        resource_id: str = "",
+        content_desc: str = "",
+        exact: bool = False,
+    ) -> AndroidUiNode:
+        node = self.find_ui_node(text=text, resource_id=resource_id, content_desc=content_desc, exact=exact)
+        if node is None:
+            raise AdbError("No Android UI node matched the requested selector.")
+        x, y = node.center
+        self.tap(x, y)
+        return node
+
     def adbkeyboard_installed(self) -> bool:
         out = self.shell("pm list packages com.android.adbkeyboard", timeout=10)
         return "com.android.adbkeyboard" in out
@@ -281,6 +369,12 @@ def run_diagnostics(serial: str | None = None, adb: str | None = None, include_i
         results.append(DiagnosticResult("screenshot", png.startswith(b"\x89PNG"), f"{len(png)} bytes"))
     except Exception as e:
         results.append(DiagnosticResult("screenshot", False, str(e)))
+
+    try:
+        nodes = dev.ui_nodes()
+        results.append(DiagnosticResult("uiautomator", True, f"{len(nodes)} nodes"))
+    except Exception as e:
+        results.append(DiagnosticResult("uiautomator", False, str(e)))
 
     try:
         ok = dev.adbkeyboard_installed()

@@ -20,6 +20,21 @@ class FakeResp:
 
 
 @pytest.mark.unit
+def test_plan_prompt_includes_skill_arg_schema(monkeypatch):
+    captured = {}
+
+    def fake_step(messages, tools, system="", tool_choice=None):
+        captured["prompt"] = messages[0]["content"]
+        return FakeResp("tool_use", [FakeBlock("tool_use", "submit_plan", {"tasks": [{"skill": "x", "goal": "y", "label": "z"}]})])
+
+    monkeypatch.setattr(harness, "agent_step", fake_step)
+    harness.plan("crawl xhs")
+
+    assert "args_schema" in captured["prompt"]
+    assert "--keyword" in captured["prompt"]
+
+
+@pytest.mark.unit
 def test_plan_returns_tasks(monkeypatch):
     tasks = [
         {"skill": "extract_table", "goal": "打开 X 提取表格", "parallel": False, "label": "提取"},
@@ -136,6 +151,16 @@ def test_run_task_dispatches_saved_skill(monkeypatch):
 
 
 @pytest.mark.unit
+def test_saved_skill_rejects_missing_required_arg():
+    spec = harness.SKILL_REGISTRY["skill:showcase/web/xiaohongshu/search_posts"]
+
+    result = asyncio.run(harness._run_saved_skill(spec, {"args": ["--limit", "1"]}))
+
+    assert result["status"] == "error"
+    assert "missing required arg" in result["error"]
+
+
+@pytest.mark.unit
 def test_external_commit_requires_confirmation(monkeypatch):
     class FakeLog:
         def step(self, msg):
@@ -169,6 +194,7 @@ def test_export_trace_writes_browser_and_android_steps(tmp_path):
             "label": "android",
             "trace": [
                 {"tool": "android_tap", "args": {"rx": 0.5, "ry": 0.25}, "is_error": False},
+                {"tool": "android_tap_element", "args": {"text": "发布", "exact": True}, "is_error": False},
                 {"tool": "android_type", "args": {"text": "你好", "unicode": True}, "is_error": False},
             ],
         },
@@ -178,4 +204,5 @@ def test_export_trace_writes_browser_and_android_steps(tmp_path):
     assert "open_page('https://example.com')" in text
     assert "await page.click('#go')" in text
     assert "dev.tap_ratio(0.5, 0.25)" in text
+    assert "dev.tap_ui_node(text='发布'" in text
     assert "restore_ime=True" in text

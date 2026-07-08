@@ -99,6 +99,48 @@ SKILL_REGISTRY = {
 SKILL_REGISTRY = build_skill_registry()
 
 
+def _registry_for_planner() -> dict:
+    out = {}
+    for name, spec in SKILL_REGISTRY.items():
+        item = {
+            "description": spec.get("description", ""),
+            "type": spec.get("type", ""),
+            "side_effect_level": spec.get("side_effect_level", "unknown"),
+        }
+        if spec.get("args_schema"):
+            item["args_schema"] = spec["args_schema"]
+            item["args_rule"] = (
+                "For skill:* tasks, fill task.args exactly as CLI tokens after `python run.py <skill> --`. "
+                "Include every required option and respect defaults/types."
+            )
+        out[name] = item
+    return out
+
+
+def _provided_option_names(args: list[str]) -> set[str]:
+    names: set[str] = set()
+    for arg in args:
+        if arg.startswith("--"):
+            names.add(arg.split("=", 1)[0])
+    return names
+
+
+def _validate_skill_args(spec: dict, args: list[str]) -> str:
+    schema = spec.get("args_schema") or []
+    provided = _provided_option_names(args)
+    for item in schema:
+        if not item.get("required"):
+            continue
+        names = [n for n in item.get("names", []) if n.startswith("--")]
+        if names and not any(n in provided for n in names):
+            return f"missing required arg for {spec.get('path')}: one of {names}"
+    valid = {n for item in schema for n in item.get("names", []) if n.startswith("--")}
+    unknown = sorted(n for n in provided if valid and n not in valid)
+    if unknown:
+        return f"unknown arg for {spec.get('path')}: {unknown}"
+    return ""
+
+
 # ── 规划 ──────────────────────────────────────────────────────────────────────
 
 _PLAN_TOOL = {
@@ -134,11 +176,7 @@ _PLAN_TOOL = {
 def plan(goal: str) -> list[dict]:
     """用 LLM 把目标分解成 subagent 调用序列。
     通过强制 tool use 拿结构化输出，不再从自由文本里正则抠 JSON。"""
-    registry_desc = json.dumps(
-        {k: {"description": v["description"]} for k, v in SKILL_REGISTRY.items()},
-        ensure_ascii=False,
-        indent=2,
-    )
+    registry_desc = json.dumps(_registry_for_planner(), ensure_ascii=False, indent=2)
     prompt = f"""你是 RPA Harness 任务规划器。将用户目标分解为子任务序列，调用 submit_plan 提交。
 
 规划原则：
@@ -177,6 +215,9 @@ async def _run_saved_skill(spec: dict, task: dict) -> dict:
     args = task.get("args") or []
     if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
         return {"status": "error", "error": "skill args must be a list of strings"}
+    arg_error = _validate_skill_args(spec, args)
+    if arg_error:
+        return {"status": "error", "error": arg_error}
 
     cmd = [sys.executable, "run.py", skill_path]
     if args:
@@ -529,6 +570,17 @@ def export_trace(goal: str, results: list[dict], output_path: str) -> None:
                     lines.append(f'    dev.tap_ratio({float(args["rx"])!r}, {float(args["ry"])!r})')
                 else:
                     lines.append(f'    dev.tap({int(args.get("x", 0))}, {int(args.get("y", 0))})')
+            elif tool == "android_tap_element":
+                if not android_started:
+                    lines.append("    dev = AndroidDevice()")
+                    android_started = True
+                lines.append(
+                    "    dev.tap_ui_node("
+                    f'text={args.get("text", "")!r}, '
+                    f'resource_id={args.get("resource_id", "")!r}, '
+                    f'content_desc={args.get("content_desc", "")!r}, '
+                    f'exact={bool(args.get("exact", False))!r})'
+                )
             elif tool == "android_swipe":
                 if not android_started:
                     lines.append("    dev = AndroidDevice()")

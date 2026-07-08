@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
-import random
 from pathlib import Path
 from urllib.parse import quote
 
+from core.artifacts import write_json_artifact
+from core.human import human_pause, slow_scroll_browser
 from playwright.async_api import Page
 
 XHS_HOST = "https://www.xiaohongshu.com"
@@ -21,14 +20,8 @@ def user_url(user_id: str) -> str:
     return f"{XHS_HOST}/user/profile/{quote(user_id)}"
 
 
-async def human_pause(min_wait: float = 1.2, max_wait: float = 3.2) -> None:
-    await asyncio.sleep(random.uniform(min_wait, max_wait))
-
-
 async def slow_scroll(page: Page, rounds: int, min_wait: float = 1.4, max_wait: float = 3.8) -> None:
-    for _ in range(max(0, rounds)):
-        await page.mouse.wheel(0, random.randint(520, 980))
-        await human_pause(min_wait, max_wait)
+    await slow_scroll_browser(page, rounds, min_wait=min_wait, max_wait=max_wait)
 
 
 async def goto_and_settle(page: Page, url: str) -> None:
@@ -114,14 +107,10 @@ async def collect_post_detail(page: Page) -> dict:
     )
 
 
-def write_json(data, output: str) -> None:
-    if not output:
-        print(json.dumps(data, ensure_ascii=False, indent=2))
-        return
-    path = Path(output)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+def write_json(data, output: str, skill_name: str = "web/xiaohongshu") -> Path:
+    path = write_json_artifact(data, skill_name=skill_name, output=output)
     print(f"Saved to {path.resolve()}")
+    return path
 
 
 def argv_after_separator(sys_argv: list[str]) -> list[str]:

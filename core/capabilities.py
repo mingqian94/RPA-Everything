@@ -44,7 +44,8 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
         "description": "探索已连接 Android 手机，完成设备发现、截图、点击、滑动、按键、输入和文件推送",
         "hint": (
             "先调用 android_devices / android_diagnostics 确认设备在线；"
-            "优先使用 0~1 屏幕比例坐标，避免写死像素；"
+            "优先使用 android_dump_ui / android_tap_element 按 text/resource-id/content-desc 操作；"
+            "UIAutomator 找不到时再使用 0~1 屏幕比例坐标，避免写死像素；"
             "中文、emoji、换行文本用 android_type unicode=true；"
             "真实外部副作用（发布/发送/付款等）完成后只标记待确认，除非有明确成功信号"
         ),
