@@ -13,9 +13,9 @@ from playwright.async_api import async_playwright, Page, Browser
 from core.config import get as _cfg_get
 
 def _cdp_url() -> str:
-    # 用 localhost 而非写死 127.0.0.1：Chrome 的调试端口可能只监听
-    # IPv6 回环（[::1]:9222，Windows 实测），localhost 能解析到正确协议栈
-    return _cfg_get("browser.cdp_url") or "http://localhost:9222"
+    # Prefer IPv4 loopback. On Windows, Playwright may resolve localhost to
+    # ::1 while Chrome's debugging port listens only on 127.0.0.1.
+    return _cfg_get("browser.cdp_url") or "http://127.0.0.1:9222"
 
 _HINT = """
 Chrome 未以调试端口启动，请先运行启动脚本：
