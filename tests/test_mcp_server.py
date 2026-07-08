@@ -42,3 +42,9 @@ def test_tool_names_unique():
 def test_every_mcp_only_tool_has_handler():
     for t in mcp_server._MCP_ONLY_TOOLS:
         assert t["name"] in mcp_server._HANDLERS
+
+
+@pytest.mark.unit
+def test_orchestrate_exposes_confirm_external():
+    orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
+    assert "confirm_external" in orchestrate["input_schema"]["properties"]

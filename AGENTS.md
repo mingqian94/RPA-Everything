@@ -76,6 +76,8 @@ python /path/to/rpa-everything/mcp_server.py
 
 ```bash
 python run.py showcase/web/extract_table -- --url https://example.com
+python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营" --output data/xhs_search.json
+python run.py showcase/web/xiaohongshu/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
 python run.py showcase/app/post_circle/post_circle -- --text "内容"
 python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
 python run.py skills/my_skill
@@ -95,6 +97,9 @@ python run.py harness/agent -- --goal "..." --export skills/my_new_skill.py
 
 # 提供 SOP 文档，执行后截图验证结果是否符合规范
 python run.py harness/agent -- --goal "..." --sop sops/feishu/post_circle.md
+
+# 允许执行发布/审批/发送等真实外部副作用任务时，必须显式确认
+python run.py harness/agent -- --goal "..." --confirm-external
 ```
 
 **列出所有可用 Skill：**

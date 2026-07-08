@@ -109,6 +109,7 @@ _MCP_ONLY_TOOLS = [
                 "dry_run": {"type": "boolean", "description": "只规划不执行，默认 false"},
                 "export": {"type": "string", "description": "导出骨架脚本的路径，如 skills/my_workflow.py，留空则不导出"},
                 "sop": {"type": "string", "description": "SOP 文档本地路径（.md/.txt），执行后截图验证结果，留空则跳过"},
+                "confirm_external": {"type": "boolean", "description": "允许执行可能产生真实外部副作用的发布/审批/发送类任务"},
             },
             "required": ["goal"],
         },
@@ -206,6 +207,8 @@ async def _handle_orchestrate(arguments: dict):
         cmd += ["--export", arguments["export"]]
     if arguments.get("sop"):
         cmd += ["--sop", arguments["sop"]]
+    if arguments.get("confirm_external"):
+        cmd.append("--confirm-external")
     try:
         result = await asyncio.to_thread(
             subprocess.run, cmd, capture_output=True, text=True, cwd=str(ROOT), timeout=600,

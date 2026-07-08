@@ -15,11 +15,13 @@ from core.skills import ROOT, list_skills
 BUILTIN_CAPABILITIES: dict[str, dict] = {
     "extract_table": {
         "type": "browser",
+        "side_effect_level": "none",
         "description": "从网页 HTML 表格提取数据并返回",
         "hint": "目标 URL 在 goal 中指定；用 browser_evaluate 提取 table 内容",
     },
     "browser_explore": {
         "type": "browser",
+        "side_effect_level": "unknown",
         "description": "探索一个网页或浏览器系统，完成点击、输入、截图、文本/表格提取等通用浏览器任务",
         "hint": (
             "优先使用 DOM/CSS/文本定位；每个关键操作后截图或提取文本确认结果；"
@@ -28,6 +30,7 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
     },
     "desktop_explore": {
         "type": "desktop",
+        "side_effect_level": "unknown",
         "description": "探索本机桌面应用，完成截图、点击、输入、快捷键等通用桌面任务",
         "hint": (
             "先截图确认当前窗口和目标元素；中文输入走剪贴板；关键结果要截图确认。"
@@ -36,6 +39,7 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
     },
     "android_explore": {
         "type": "android",
+        "side_effect_level": "unknown",
         "description": "探索已连接 Android 手机，完成设备发现、截图、点击、滑动、按键、输入和文件推送",
         "hint": (
             "先调用 android_devices / android_diagnostics 确认设备在线；"
@@ -46,6 +50,7 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
     },
     "android_diagnostics": {
         "type": "android",
+        "side_effect_level": "local",
         "description": "检查 Android 自动化前置条件：ADB 连接、截图、可选输入注入、文件推送等",
         "hint": (
             "先列出设备，再运行 android_diagnostics；"
@@ -54,11 +59,13 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
     },
     "feishu_post": {
         "type": "desktop",
+        "side_effect_level": "external_commit",
         "description": "向飞书圈子发帖",
         "hint": "飞书已在桌面端运行；先截图找到导航图标，点击进入圈子，找到发帖框填入内容，选择版块后点击发布",
     },
     "feishu_approve": {
         "type": "desktop",
+        "side_effect_level": "external_commit",
         "description": "在飞书 App 中批量处理待审批单（如报表申请），逐一打开并点同意",
         "hint": (
             "飞书已在桌面端运行；点击左侧导航栏「审批」图标（或从消息通知进入）进入「待我审批」列表\n"
@@ -94,6 +101,17 @@ def _read_skill_description(skill_path: str) -> str:
     return f"运行已固化 Skill：{skill_path}"
 
 
+def _infer_side_effect_level(skill_path: str) -> str:
+    lowered = skill_path.lower()
+    if "xiaohongshu_note" in lowered:
+        return "external_draft"
+    if any(word in lowered for word in ["extract", "crawler", "crawl", "search", "detail", "user_posts", "post_detail"]):
+        return "none"
+    if any(word in lowered for word in ["post", "approve", "send", "publish"]):
+        return "external_commit"
+    return "unknown"
+
+
 def build_skill_registry(include_discovered: bool = True) -> dict[str, dict]:
     """Return the capability registry used by the Harness planner."""
     registry = {k: dict(v) for k, v in BUILTIN_CAPABILITIES.items()}
@@ -104,6 +122,7 @@ def build_skill_registry(include_discovered: bool = True) -> dict[str, dict]:
         key = f"skill:{skill_path}"
         registry[key] = {
             "type": "skill",
+            "side_effect_level": _infer_side_effect_level(skill_path),
             "description": _read_skill_description(skill_path),
             "hint": (
                 f"这是可直接运行的已固化 Skill：python run.py {skill_path}。"

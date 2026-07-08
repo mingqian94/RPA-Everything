@@ -98,7 +98,8 @@ rpa-everything/
 ├── showcase/                # Skill examples (one per technical approach, see ARCHITECTURE.md)
 │   ├── web/
 │   │   ├── extract_table/   # Generic web table extraction (Browser DOM)
-│   │   └── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
+│   │   ├── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
+│   │   └── xiaohongshu/     # Xiaohongshu user/search/detail crawling showcases
 │   ├── app/
 │   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
 │   ├── android/
@@ -454,6 +455,9 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 |---|---|---|---|
 | `showcase/web/extract_table` | Browser DOM | ✅ Runnable | `--url https://www.w3schools.com/html/html_tables.asp` |
 | `showcase/web/click_by_vision` | Browser + LLM Vision | ✅ Runnable | `model: global.anthropic.claude-sonnet-4-6` in config.yaml |
+| `showcase/web/xiaohongshu/user_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll a user's posts; `--user-url <URL> --output data/xhs_user.json` |
+| `showcase/web/xiaohongshu/search_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll keyword/tag results; `--keyword "camping" --output data/xhs_search.json` |
+| `showcase/web/xiaohongshu/post_detail` | Browser DOM crawl | ✅ Runnable | Extract visible text, images, videos, engagement; `--url <URL>` |
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
 | `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
 | `showcase/android/xiaohongshu_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |

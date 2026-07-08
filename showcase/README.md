@@ -8,6 +8,9 @@
 |---|---|---|---|
 | `web/extract_table` | 提取任意网页的 HTML 表格，返回 JSON | 否 | `python run.py showcase/web/extract_table -- --url <URL>` |
 | `web/click_by_vision` | 截图发给 LLM，识别目标元素并点击 | 是（多模态模型）| `python run.py showcase/web/click_by_vision -- --url <URL> --action "右上角的导出按钮"` |
+| `web/xiaohongshu/user_posts` | 慢滚动采集某个小红书用户主页的帖子卡片 | 否 | `python run.py showcase/web/xiaohongshu/user_posts -- --user-url <URL>` |
+| `web/xiaohongshu/search_posts` | 慢滚动采集某个搜索词或 tag 下的帖子卡片 | 否 | `python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营"` |
+| `web/xiaohongshu/post_detail` | 采集单篇帖子内可见文字、图片、视频和互动信息 | 否 | `python run.py showcase/web/xiaohongshu/post_detail -- --url <URL>` |
 
 > `web/` 下的 Skill 来自真实系统的结构简化版，直接运行需要对应系统权限，**主要价值是提供结构参考**，照着把系统地址和字段替换成自己的即可。
 

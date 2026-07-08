@@ -130,3 +130,20 @@ def test_run_task_dispatches_saved_skill(monkeypatch):
     assert result["status"] == "ok"
     assert calls[0][0]["type"] == "skill"
     assert calls[0][1]["args"][0] == "--dry-run"
+
+
+@pytest.mark.unit
+def test_external_commit_requires_confirmation(monkeypatch):
+    class FakeLog:
+        def step(self, msg):
+            pass
+
+    result = asyncio.run(harness._run_task({
+        "skill": "skill:showcase/android/xiaohongshu_note/xiaohongshu_note",
+        "goal": "真实发布小红书笔记",
+        "args": ["--profile", "data/xhs_profile.json", "--confirm-post"],
+        "label": "发布",
+    }, FakeLog()))
+
+    assert result["status"] == "error"
+    assert "--confirm-external" in result["error"]

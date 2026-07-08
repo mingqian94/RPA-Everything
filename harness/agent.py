@@ -199,7 +199,15 @@ async def _run_saved_skill(spec: dict, task: dict) -> dict:
     }
 
 
-async def _run_task(task: dict, log: SkillLogger) -> dict:
+def _external_commit_requested(spec: dict, task: dict) -> bool:
+    level = spec.get("side_effect_level", "unknown")
+    args = task.get("args") or []
+    if level == "external_commit":
+        return True
+    return level == "external_draft" and any(a in {"--confirm", "--confirm-post", "--publish"} for a in args)
+
+
+async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False) -> dict:
     """为一个子任务启动对应的 subagent，失败时带错误上下文自动重试一次。"""
     skill_name = task["skill"]
     label = task.get("label", skill_name)
@@ -210,6 +218,16 @@ async def _run_task(task: dict, log: SkillLogger) -> dict:
                 "error": f"未知技能：{skill_name}"}
 
     spec = SKILL_REGISTRY[skill_name]
+    if _external_commit_requested(spec, task) and not confirm_external:
+        return {
+            "skill": skill_name,
+            "label": label,
+            "status": "error",
+            "error": (
+                "该任务可能产生真实外部副作用。请人工确认后使用 "
+                "--confirm-external 再执行；或去掉最终发布/审批/发送参数。"
+            ),
+        }
     max_attempts = 1 if spec.get("type") == "skill" else MAX_ATTEMPTS
     base_goal = task["goal"]
     if spec.get("hint"):
@@ -256,7 +274,7 @@ async def _run_task(task: dict, log: SkillLogger) -> dict:
     return {"skill": skill_name, "label": label, "status": "error", "error": last_error}
 
 
-async def _execute_plan(tasks: list[dict], log: SkillLogger) -> list[dict]:
+async def _execute_plan(tasks: list[dict], log: SkillLogger, confirm_external: bool = False) -> list[dict]:
     """按规划顺序执行，parallel=true 的相邻任务并发（各自独立 page，无共享）。"""
     results = []
     group: list[dict] = []
@@ -264,7 +282,7 @@ async def _execute_plan(tasks: list[dict], log: SkillLogger) -> list[dict]:
     async def flush_group():
         if not group:
             return
-        group_results = await asyncio.gather(*[_run_task(t, log) for t in group])
+        group_results = await asyncio.gather(*[_run_task(t, log, confirm_external) for t in group])
         results.extend(group_results)
         group.clear()
 
@@ -273,7 +291,7 @@ async def _execute_plan(tasks: list[dict], log: SkillLogger) -> list[dict]:
             group.append(task)
         else:
             await flush_group()
-            results.append(await _run_task(task, log))
+            results.append(await _run_task(task, log, confirm_external))
 
     await flush_group()
     return results
@@ -441,7 +459,13 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
 
 # ── 入口 ──────────────────────────────────────────────────────────────────────
 
-async def run(goal: str, dry_run: bool = False, export: str = "", sop: str = "") -> list[dict]:
+async def run(
+    goal: str,
+    dry_run: bool = False,
+    export: str = "",
+    sop: str = "",
+    confirm_external: bool = False,
+) -> list[dict]:
     log = SkillLogger("harness/agent")
     log.step(f"目标：{goal}")
 
@@ -467,7 +491,7 @@ async def run(goal: str, dry_run: bool = False, export: str = "", sop: str = "")
     print("\n🚀 启动 Subagent 执行...\n", flush=True)
 
     try:
-        results = await _execute_plan(tasks, log)
+        results = await _execute_plan(tasks, log, confirm_external)
     finally:
         await BrowserManager.close()
 
@@ -498,6 +522,8 @@ def main():
                         help="规划后导出骨架脚本（如 skills/my_workflow.py），不执行")
     parser.add_argument("--sop", default="", metavar="PATH",
                         help="SOP 文档路径（.md/.txt），执行后截图验证结果是否符合规范")
+    parser.add_argument("--confirm-external", action="store_true",
+                        help="允许执行可能产生真实外部副作用的发布/审批/发送类任务")
 
     try:
         sep = sys.argv.index("--")
@@ -506,7 +532,7 @@ def main():
         argv = sys.argv[1:]
 
     args = parser.parse_args(argv)
-    asyncio.run(run(args.goal, args.dry_run, args.export, args.sop))
+    asyncio.run(run(args.goal, args.dry_run, args.export, args.sop, args.confirm_external))
 
 
 if __name__ == "__main__":

@@ -11,3 +11,8 @@ def test_registry_includes_builtins_and_discovered_skills():
     assert key in registry
     assert registry[key]["type"] == "skill"
     assert registry[key]["path"] == "showcase/android/xiaohongshu_note/xiaohongshu_note"
+    assert registry[key]["side_effect_level"] == "external_draft"
+
+    crawler = "skill:showcase/web/xiaohongshu/post_detail"
+    assert crawler in registry
+    assert registry[crawler]["side_effect_level"] == "none"
