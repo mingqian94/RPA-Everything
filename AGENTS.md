@@ -64,7 +64,7 @@ python /path/to/rpa-everything/mcp_server.py
 | `skill_list` | 列出所有可用 Skill |
 | `skill_run` | 运行已保存的 Skill |
 | `skill_save` | 将代码保存为新 Skill |
-| `orchestrate` | 接受自然语言目标，Harness 自动规划并执行；支持 `dry_run`、`export` 导出骨架脚本、`sop` 执行后截图验证 |
+| `orchestrate` | 接受自然语言目标，Harness 自动规划并执行；支持 `dry_run`、`export` 导出骨架脚本、`export_trace` 导出真实工具调用初稿脚本、`sop` 执行后截图验证 |
 
 ---
 
@@ -94,6 +94,9 @@ python run.py harness/agent -- --goal "帮我查今天的 OJ 排行榜"
 
 # 执行后导出为可复用的 Skill 骨架
 python run.py harness/agent -- --goal "..." --export skills/my_new_skill.py
+
+# 执行一次后导出真实工具调用轨迹，作为可 review 的初稿 Skill
+python run.py harness/agent -- --goal "..." --export-trace skills/my_new_skill.py
 
 # 提供 SOP 文档，执行后截图验证结果是否符合规范
 python run.py harness/agent -- --goal "..." --sop sops/feishu/post_circle.md

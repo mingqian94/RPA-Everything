@@ -218,6 +218,7 @@ ANDROID_TOOLS = [
                 "serial": {"type": "string"},
                 "text": {"type": "string"},
                 "unicode": {"type": "boolean", "default": False},
+                "restore_ime": {"type": "boolean", "default": True},
             },
             "required": ["text"],
         },
@@ -372,7 +373,11 @@ def execute_android_tool(name: str, args: dict) -> list[dict]:
 
     if name == "android_type":
         dev = AndroidDevice(serial=args.get("serial"))
-        dev.input_text(args["text"], unicode=bool(args.get("unicode", False)))
+        dev.input_text(
+            args["text"],
+            unicode=bool(args.get("unicode", False)),
+            restore_ime=bool(args.get("restore_ime", True)),
+        )
         return [{"type": "text", "text": "Android text input complete."}]
 
     if name == "android_push_file":

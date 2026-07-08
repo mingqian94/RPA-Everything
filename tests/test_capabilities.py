@@ -16,3 +16,8 @@ def test_registry_includes_builtins_and_discovered_skills():
     crawler = "skill:showcase/web/xiaohongshu/post_detail"
     assert crawler in registry
     assert registry[crawler]["side_effect_level"] == "none"
+
+    search = registry["skill:showcase/web/xiaohongshu/search_posts"]
+    args = {name: item for item in search["args_schema"] for name in item["names"]}
+    assert args["--keyword"]["required"] is True
+    assert "--output" in args

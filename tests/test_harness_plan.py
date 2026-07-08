@@ -70,8 +70,10 @@ def test_android_skills_registered():
 def test_run_task_dispatches_android(monkeypatch):
     calls = []
 
-    async def fake_run_android(goal):
+    async def fake_run_android(goal, trace=None):
         calls.append(goal)
+        if trace is not None:
+            trace.append({"tool": "android_devices", "args": {}, "is_error": False})
         return {"status": "ok", "result": "android done"}
 
     class FakeLog:
@@ -88,6 +90,7 @@ def test_run_task_dispatches_android(monkeypatch):
     assert result["status"] == "ok"
     assert result["skill"] == "android_explore"
     assert "android_devices" in calls[0]
+    assert result["trace"][0]["tool"] == "android_devices"
     assert "屏幕比例坐标" in calls[0]
 
 
@@ -147,3 +150,32 @@ def test_external_commit_requires_confirmation(monkeypatch):
 
     assert result["status"] == "error"
     assert "--confirm-external" in result["error"]
+
+
+@pytest.mark.unit
+def test_export_trace_writes_browser_and_android_steps(tmp_path):
+    out = tmp_path / "trace_skill.py"
+    harness.export_trace("测试导出", [
+        {
+            "status": "ok",
+            "label": "browser",
+            "trace": [
+                {"tool": "browser_navigate", "args": {"url": "https://example.com"}, "is_error": False},
+                {"tool": "browser_click", "args": {"selector": "#go"}, "is_error": False},
+            ],
+        },
+        {
+            "status": "ok",
+            "label": "android",
+            "trace": [
+                {"tool": "android_tap", "args": {"rx": 0.5, "ry": 0.25}, "is_error": False},
+                {"tool": "android_type", "args": {"text": "你好", "unicode": True}, "is_error": False},
+            ],
+        },
+    ], str(out))
+
+    text = out.read_text(encoding="utf-8")
+    assert "open_page('https://example.com')" in text
+    assert "await page.click('#go')" in text
+    assert "dev.tap_ratio(0.5, 0.25)" in text
+    assert "restore_ime=True" in text

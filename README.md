@@ -301,6 +301,9 @@ python run.py harness/agent -- --goal "extract the table from this page" --sop s
 # Step 3: export a skeleton script (auto-generated, with step structure and TODOs)
 python run.py harness/agent -- --goal "extract the table from this page" --export skills/my_task_daily.py
 
+# Step 4: execute once, then export the actual tool-call trace as a first-draft Skill
+python run.py harness/agent -- --goal "extract the table from this page" --export-trace skills/my_task_daily.py
+
 # Step 4: open skills/my_task_daily.py, replace the TODOs with deterministic Playwright code
 # Step 5: verify
 python run.py skills/my_task_daily
@@ -423,7 +426,7 @@ Browser, desktop, and Android tools share one schema definition with the agentic
 
 | Tool | Description |
 |---|---|
-| `orchestrate` | Takes a natural-language goal, plans and executes multiple Skills; supports `dry_run` (plan only), `export` (skeleton script), `sop` (post-run screenshot verification) |
+| `orchestrate` | Takes a natural-language goal, plans and executes multiple Skills; supports `dry_run` (plan only), `export` (skeleton script), `export_trace` (first-draft script from actual tool calls), `sop` (post-run screenshot verification) |
 
 ### Typical flows
 

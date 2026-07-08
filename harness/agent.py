@@ -236,6 +236,7 @@ async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False
     last_error = ""
     for attempt in range(1, max_attempts + 1):
         full_goal = base_goal
+        trace: list[dict] = []
         if attempt > 1:
             full_goal += f"\n\n⚠️ 上次尝试失败，原因：{last_error}\n请换一种方式重试。"
 
@@ -247,13 +248,16 @@ async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False
             if spec["type"] == "browser":
                 page = await BrowserManager.new_page()
                 try:
-                    result = await run_browser(full_goal, page)
+                    result = await run_browser(full_goal, page, trace=trace)
+                    result.setdefault("trace", trace)
                 finally:
                     await page.close()
             elif spec["type"] == "desktop":
-                result = await run_desktop(full_goal)
+                result = await run_desktop(full_goal, trace=trace)
+                result.setdefault("trace", trace)
             elif spec["type"] == "android":
-                result = await run_android(full_goal)
+                result = await run_android(full_goal, trace=trace)
+                result.setdefault("trace", trace)
             elif spec["type"] == "skill":
                 result = await _run_saved_skill(spec, task)
             else:
@@ -457,6 +461,129 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
     print("   下一步：打开文件，把各步骤的 TODO 替换成确定性代码", flush=True)
 
 
+def export_trace(goal: str, results: list[dict], output_path: str) -> None:
+    """Export executed tool calls as an editable first-draft Skill."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    skill_name = path.stem
+    lines = [
+        '"""',
+        "[自动生成] Harness 执行轨迹初稿",
+        f"原始目标：{goal}",
+        "",
+        "请 review 后再用于生产：桌面坐标和真实外部副作用步骤尤其需要人工确认。",
+        '"""',
+        "",
+        "import asyncio",
+        "import subprocess",
+        "import sys",
+        "from core.android import AndroidDevice",
+        "from core.browser import open_page",
+        "from core.desktop import click as desktop_click, hotkey as desktop_hotkey, type_text as desktop_type",
+        "from core.logger import SkillLogger",
+        "",
+        "",
+        "async def main():",
+        f'    log = SkillLogger("{skill_name}")',
+    ]
+
+    browser_started = False
+    android_started = False
+    for result in results:
+        lines.append("")
+        lines.append(f"    # ── {result.get('label', result.get('skill', 'step'))} ──")
+        if result.get("skill", "").startswith("skill:"):
+            spec = SKILL_REGISTRY.get(result["skill"], {})
+            skill_path = spec.get("path", result["skill"].removeprefix("skill:"))
+            lines.append(f'    subprocess.run([sys.executable, "run.py", "{skill_path}"], check=True)')
+            continue
+
+        for item in result.get("trace", []):
+            tool = item.get("tool")
+            args = item.get("args", {})
+            if item.get("is_error"):
+                lines.append(f"    # skipped failed tool call: {tool} {args!r}")
+                continue
+            if tool and tool.startswith("browser_") and tool != "browser_navigate" and not browser_started:
+                lines.append("    page_ctx = open_page(None)")
+                lines.append("    page = await page_ctx.__aenter__()")
+                browser_started = True
+            if tool == "browser_navigate":
+                lines.append(f'    page_ctx = open_page({args.get("url", "")!r})')
+                lines.append("    page = await page_ctx.__aenter__()")
+                browser_started = True
+            elif tool == "browser_click":
+                if args.get("selector"):
+                    lines.append(f'    await page.click({args["selector"]!r})')
+                elif args.get("text"):
+                    lines.append(f'    await page.click("text={args["text"]}")')
+            elif tool == "browser_type":
+                lines.append(f'    await page.fill({args.get("selector", "")!r}, {args.get("text", "")!r})')
+            elif tool == "browser_evaluate":
+                lines.append(f'    await page.evaluate({args.get("js", "")!r})')
+            elif tool == "android_tap":
+                if not android_started:
+                    lines.append("    dev = AndroidDevice()")
+                    android_started = True
+                if "rx" in args and "ry" in args:
+                    lines.append(f'    dev.tap_ratio({float(args["rx"])!r}, {float(args["ry"])!r})')
+                else:
+                    lines.append(f'    dev.tap({int(args.get("x", 0))}, {int(args.get("y", 0))})')
+            elif tool == "android_swipe":
+                if not android_started:
+                    lines.append("    dev = AndroidDevice()")
+                    android_started = True
+                if all(k in args for k in ("rx1", "ry1", "rx2", "ry2")):
+                    lines.append(
+                        "    dev.swipe_ratio("
+                        f'{float(args["rx1"])!r}, {float(args["ry1"])!r}, '
+                        f'{float(args["rx2"])!r}, {float(args["ry2"])!r}, '
+                        f'{int(args.get("duration_ms", 300))})'
+                    )
+                else:
+                    lines.append(
+                        "    dev.swipe("
+                        f'{int(args.get("x1", 0))}, {int(args.get("y1", 0))}, '
+                        f'{int(args.get("x2", 0))}, {int(args.get("y2", 0))}, '
+                        f'{int(args.get("duration_ms", 300))})'
+                    )
+            elif tool == "android_key":
+                if not android_started:
+                    lines.append("    dev = AndroidDevice()")
+                    android_started = True
+                lines.append(f'    dev.key({args.get("keycode", "")!r})')
+            elif tool == "android_type":
+                if not android_started:
+                    lines.append("    dev = AndroidDevice()")
+                    android_started = True
+                lines.append(
+                    f'    dev.input_text({args.get("text", "")!r}, '
+                    f'unicode={bool(args.get("unicode"))!r}, '
+                    f'restore_ime={bool(args.get("restore_ime", True))!r})'
+                )
+            elif tool == "desktop_click":
+                lines.append(f'    desktop_click({int(args.get("x", 0))}, {int(args.get("y", 0))})  # TODO: prefer template matching')
+            elif tool == "desktop_type":
+                lines.append(f'    desktop_type({args.get("text", "")!r})')
+            elif tool == "desktop_hotkey":
+                keys = args.get("keys", [])
+                lines.append(f"    desktop_hotkey(*{keys!r})")
+            else:
+                lines.append(f"    # TODO: review tool call: {tool} {args!r}")
+
+    if browser_started:
+        lines.append("    await page_ctx.__aexit__(None, None, None)")
+    lines += [
+        '    log.finish({"exported_from_trace": True})',
+        "",
+        "",
+        'if __name__ == "__main__":',
+        "    asyncio.run(main())",
+    ]
+    path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"\n📄 执行轨迹脚本已生成：{path}", flush=True)
+
+
 # ── 入口 ──────────────────────────────────────────────────────────────────────
 
 async def run(
@@ -465,6 +592,7 @@ async def run(
     export: str = "",
     sop: str = "",
     confirm_external: bool = False,
+    export_trace_path: str = "",
 ) -> list[dict]:
     log = SkillLogger("harness/agent")
     log.step(f"目标：{goal}")
@@ -509,6 +637,9 @@ async def run(
             log.finish({"ok": ok, "total": len(results), "verify": "terminated"})
             sys.exit(1)
 
+    if export_trace_path:
+        export_trace(goal, results, export_trace_path)
+
     log.finish({"ok": ok, "total": len(results), "results": results})
     return results
 
@@ -524,6 +655,8 @@ def main():
                         help="SOP 文档路径（.md/.txt），执行后截图验证结果是否符合规范")
     parser.add_argument("--confirm-external", action="store_true",
                         help="允许执行可能产生真实外部副作用的发布/审批/发送类任务")
+    parser.add_argument("--export-trace", default="", metavar="PATH",
+                        help="执行后把工具调用轨迹导出为初版 Skill 脚本")
 
     try:
         sep = sys.argv.index("--")
@@ -532,7 +665,7 @@ def main():
         argv = sys.argv[1:]
 
     args = parser.parse_args(argv)
-    asyncio.run(run(args.goal, args.dry_run, args.export, args.sop, args.confirm_external))
+    asyncio.run(run(args.goal, args.dry_run, args.export, args.sop, args.confirm_external, args.export_trace))
 
 
 if __name__ == "__main__":

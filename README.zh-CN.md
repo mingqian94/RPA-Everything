@@ -305,6 +305,9 @@ python run.py harness/agent -- --goal "提取这个网页里的表格数据" --s
 # 第三步：导出骨架脚本（自动生成，含步骤结构和 TODO）
 python run.py harness/agent -- --goal "提取这个网页里的表格数据" --export skills/my_task_daily.py
 
+# 执行一次后，把真实工具调用轨迹导出为初稿 Skill
+python run.py harness/agent -- --goal "提取这个网页里的表格数据" --export-trace skills/my_task_daily.py
+
 # 第四步：打开 skills/my_task_daily.py，把 TODO 替换成确定性 Playwright 代码
 # 第五步：验证
 python run.py skills/my_task_daily
@@ -427,7 +430,7 @@ MCP Server 是本框架的对话入口，让用户无需写代码，通过与 Cl
 
 | 工具 | 说明 |
 |---|---|
-| `orchestrate` | 接受自然语言目标，自动规划并执行多个 Skill；支持 `dry_run`（只规划）、`export`（导出骨架脚本）、`sop`（执行后截图验证） |
+| `orchestrate` | 接受自然语言目标，自动规划并执行多个 Skill；支持 `dry_run`（只规划）、`export`（导出骨架脚本）、`export_trace`（按真实工具调用导出初稿脚本）、`sop`（执行后截图验证） |
 
 ### 典型使用流程
 

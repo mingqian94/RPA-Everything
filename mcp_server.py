@@ -100,6 +100,7 @@ _MCP_ONLY_TOOLS = [
             "例如：「帮我做 3 道入门 OJ 题」「查假期余额然后在飞书发签到帖」。"
             "dry_run=true 时只返回规划，不实际执行。"
             "export 填路径时，执行后将流程骨架导出为可复用的 Skill 脚本。"
+            "export_trace 填路径时，执行后将实际工具调用轨迹导出为初稿 Skill 脚本。"
             "sop 填 SOP 文档本地路径时，执行后自动截图并用 LLM 验证结果是否符合规范。"
         ),
         "input_schema": {
@@ -108,6 +109,7 @@ _MCP_ONLY_TOOLS = [
                 "goal": {"type": "string", "description": "高层目标，自然语言"},
                 "dry_run": {"type": "boolean", "description": "只规划不执行，默认 false"},
                 "export": {"type": "string", "description": "导出骨架脚本的路径，如 skills/my_workflow.py，留空则不导出"},
+                "export_trace": {"type": "string", "description": "导出实际工具调用轨迹脚本的路径，如 skills/my_workflow.py"},
                 "sop": {"type": "string", "description": "SOP 文档本地路径（.md/.txt），执行后截图验证结果，留空则跳过"},
                 "confirm_external": {"type": "boolean", "description": "允许执行可能产生真实外部副作用的发布/审批/发送类任务"},
             },
@@ -115,6 +117,8 @@ _MCP_ONLY_TOOLS = [
         },
     },
 ]
+
+ALL_TOOLS = _SHARED_BROWSER + _SHARED_DESKTOP + _SHARED_ANDROID + _MCP_ONLY_TOOLS
 
 
 def _to_mcp_tool(schema: dict) -> types.Tool:
@@ -143,7 +147,7 @@ def _text(msg: str) -> list[types.TextContent]:
 
 @server.list_tools()
 async def list_tools() -> list[types.Tool]:
-    return [_to_mcp_tool(t) for t in _SHARED_BROWSER + _SHARED_DESKTOP + _SHARED_ANDROID + _MCP_ONLY_TOOLS]
+    return [_to_mcp_tool(t) for t in ALL_TOOLS]
 
 
 # ── MCP 特有工具的 handler ────────────────────────────────────────────────────
@@ -205,6 +209,8 @@ async def _handle_orchestrate(arguments: dict):
         cmd.append("--dry-run")
     if arguments.get("export"):
         cmd += ["--export", arguments["export"]]
+    if arguments.get("export_trace"):
+        cmd += ["--export-trace", arguments["export_trace"]]
     if arguments.get("sop"):
         cmd += ["--sop", arguments["sop"]]
     if arguments.get("confirm_external"):

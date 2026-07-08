@@ -203,10 +203,36 @@ class AndroidDevice:
     def key(self, keycode: str) -> None:
         self.shell(f"input keyevent {keycode}")
 
-    def input_text(self, text: str, unicode: bool = False) -> None:
+    def adbkeyboard_installed(self) -> bool:
+        out = self.shell("pm list packages com.android.adbkeyboard", timeout=10)
+        return "com.android.adbkeyboard" in out
+
+    def current_ime(self) -> str:
+        return self.shell("settings get secure default_input_method", timeout=10).strip()
+
+    def set_ime(self, ime: str) -> None:
+        self.shell(f"ime enable {ime}", timeout=10)
+        self.shell(f"ime set {ime}", timeout=10)
+
+    def input_text(self, text: str, unicode: bool = False, restore_ime: bool = True) -> None:
         if unicode:
+            adb_ime = "com.android.adbkeyboard/.AdbIME"
+            if not self.adbkeyboard_installed():
+                raise AdbError(
+                    "ADBKeyboard is required for unicode Android input. "
+                    "Install com.android.adbkeyboard or call input_text(..., unicode=False)."
+                )
+            previous_ime = self.current_ime()
+            self.set_ime(adb_ime)
             payload = base64.b64encode(text.encode("utf-8")).decode("ascii")
-            self.shell(f"am broadcast -a ADB_INPUT_B64 --es msg {payload}")
+            try:
+                self.shell(f"am broadcast -a ADB_INPUT_B64 --es msg {payload}")
+            finally:
+                if restore_ime and previous_ime and previous_ime != "null":
+                    try:
+                        self.set_ime(previous_ime)
+                    except Exception:
+                        pass
             return
         escaped = text.replace("%", "%25").replace(" ", "%s").replace("&", r"\&")
         self.shell(f"input text {escaped}")
@@ -255,6 +281,13 @@ def run_diagnostics(serial: str | None = None, adb: str | None = None, include_i
         results.append(DiagnosticResult("screenshot", png.startswith(b"\x89PNG"), f"{len(png)} bytes"))
     except Exception as e:
         results.append(DiagnosticResult("screenshot", False, str(e)))
+
+    try:
+        ok = dev.adbkeyboard_installed()
+        detail = "installed" if ok else "not installed"
+        results.append(DiagnosticResult("adbkeyboard", ok, detail))
+    except Exception as e:
+        results.append(DiagnosticResult("adbkeyboard", False, str(e)))
 
     if include_input_check:
         try:

@@ -7,6 +7,7 @@ from ``showcase/`` and ``skills/``.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 from core.skills import ROOT, list_skills
@@ -101,6 +102,59 @@ def _read_skill_description(skill_path: str) -> str:
     return f"运行已固化 Skill：{skill_path}"
 
 
+def _literal(node):
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        return None
+
+
+def _argparse_schema(skill_path: str) -> list[dict]:
+    path = ROOT / f"{skill_path}.py"
+    if not path.exists():
+        return []
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+    except SyntaxError:
+        return []
+
+    schema = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Attribute) or node.func.attr != "add_argument":
+            continue
+        names = [_literal(arg) for arg in node.args if isinstance(_literal(arg), str)]
+        option_names = [n for n in names if n.startswith("-")]
+        if not option_names:
+            continue
+        item = {
+            "names": option_names,
+            "dest": option_names[-1].lstrip("-").replace("-", "_"),
+            "required": False,
+            "action": "",
+            "default": None,
+            "help": "",
+        }
+        for kw in node.keywords:
+            value = _literal(kw.value)
+            if kw.arg == "required":
+                item["required"] = bool(value)
+            elif kw.arg == "action":
+                item["action"] = value or ""
+            elif kw.arg == "default":
+                item["default"] = value
+            elif kw.arg == "help":
+                item["help"] = value or ""
+            elif kw.arg == "nargs":
+                item["nargs"] = value
+            elif kw.arg == "type":
+                if isinstance(kw.value, ast.Name):
+                    item["type"] = kw.value.id
+        schema.append(item)
+    return schema
+
+
 def _infer_side_effect_level(skill_path: str) -> str:
     lowered = skill_path.lower()
     if "xiaohongshu_note" in lowered:
@@ -124,6 +178,7 @@ def build_skill_registry(include_discovered: bool = True) -> dict[str, dict]:
             "type": "skill",
             "side_effect_level": _infer_side_effect_level(skill_path),
             "description": _read_skill_description(skill_path),
+            "args_schema": _argparse_schema(skill_path),
             "hint": (
                 f"这是可直接运行的已固化 Skill：python run.py {skill_path}。"
                 "如果需要参数，请在计划的 args 数组中给出 run.py -- 后面的 CLI 参数。"

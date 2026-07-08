@@ -50,3 +50,19 @@ class TestResolve:
     def test_window_offset(self, monkeypatch):
         monkeypatch.setattr(desktop, "get_window_origin", lambda name: (100, 200))
         assert desktop._resolve(10, 20, "SomeApp") == (110, 220)
+
+
+@pytest.mark.unit
+def test_cv2_unicode_path_roundtrip(tmp_path):
+    pytest.importorskip("cv2")
+    np = pytest.importorskip("numpy")
+
+    path = tmp_path / "模板按钮.png"
+    image = np.zeros((8, 8, 3), dtype=np.uint8)
+    image[2:6, 2:6] = 255
+
+    assert desktop._cv2_imwrite_unicode(str(path), image)
+    loaded = desktop._cv2_imread_unicode(str(path))
+
+    assert loaded is not None
+    assert loaded.shape == image.shape

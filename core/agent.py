@@ -90,7 +90,22 @@ async def _call(messages, tools):
         raise
 
 
-async def run_browser(goal: str, page) -> dict:
+def _record_trace(trace: list[dict] | None, tool: str, args: dict, content: list[dict], is_error: bool) -> None:
+    if trace is None:
+        return
+    text = "\n".join(
+        str(block.get("text", "")) for block in content
+        if isinstance(block, dict) and block.get("type") == "text"
+    )
+    trace.append({
+        "tool": tool,
+        "args": args,
+        "is_error": is_error,
+        "text": text[:1000],
+    })
+
+
+async def run_browser(goal: str, page, trace: list[dict] | None = None) -> dict:
     """
     以浏览器为工具运行 subagent。
     page: 已连接的 Playwright Page 对象（由 harness 负责创建和关闭）。
@@ -129,6 +144,7 @@ async def run_browser(goal: str, page) -> dict:
             except Exception as e:
                 content = [{"type": "text", "text": f"工具调用出错：{e}"}]
                 is_error = True
+            _record_trace(trace, block.name, block.input, content, is_error)
 
             if block.name == "browser_navigate" and not is_error:
                 await _pause_if_login_required(page)
@@ -146,7 +162,7 @@ async def run_browser(goal: str, page) -> dict:
     return {"status": "error", "error": f"超过最大步数 {MAX_STEPS}"}
 
 
-async def run_desktop(goal: str) -> dict:
+async def run_desktop(goal: str, trace: list[dict] | None = None) -> dict:
     """
     以桌面为工具运行 subagent。
     不需要 page，直接操作屏幕。
@@ -176,6 +192,7 @@ async def run_desktop(goal: str) -> dict:
             except Exception as e:
                 content = [{"type": "text", "text": f"工具调用出错：{e}"}]
                 is_error = True
+            _record_trace(trace, block.name, block.input, content, is_error)
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,
@@ -187,7 +204,7 @@ async def run_desktop(goal: str) -> dict:
             messages.append({"role": "user", "content": tool_results})
 
     return {"status": "error", "error": f"超过最大步数 {MAX_STEPS}"}
-async def run_android(goal: str) -> dict:
+async def run_android(goal: str, trace: list[dict] | None = None) -> dict:
     """Run a subagent with Android/ADB tools."""
     messages = [{"role": "user", "content": goal}]
     consecutive_screenshots = 0
@@ -221,6 +238,7 @@ async def run_android(goal: str) -> dict:
             except Exception as e:
                 content = [{"type": "text", "text": f"Tool call failed: {e}"}]
                 is_error = True
+            _record_trace(trace, block.name, block.input, content, is_error)
             tool_results.append({
                 "type": "tool_result",
                 "tool_use_id": block.id,

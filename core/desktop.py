@@ -89,6 +89,66 @@ def move_to(x: int, y: int, window: str | None = None):
 _MULTI_SCALES = (1.0, 0.95, 1.05, 0.9, 1.1, 0.85, 1.15, 0.8, 1.25, 0.67, 1.5)
 
 
+def _cv2_imread_unicode(path: str):
+    """Read image files with non-ASCII paths on Windows."""
+    try:
+        import cv2
+        import numpy as np
+    except Exception:
+        return None
+    data = np.fromfile(path, dtype=np.uint8)
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, cv2.IMREAD_COLOR)
+
+
+def _cv2_imwrite_unicode(path: str, image) -> bool:
+    try:
+        import cv2
+    except Exception:
+        return False
+    suffix = "." + path.rsplit(".", 1)[-1] if "." in path else ".png"
+    ok, data = cv2.imencode(suffix, image)
+    if not ok:
+        return False
+    data.tofile(path)
+    return True
+
+
+def _locate_on_screen_cv2(template_path: str, confidence: float = 0.85, multi_scale: bool = True):
+    try:
+        import cv2
+        import numpy as np
+    except Exception:
+        return None
+
+    template = _cv2_imread_unicode(template_path)
+    if template is None:
+        return None
+    shot = pyautogui.screenshot()
+    screen = cv2.cvtColor(np.array(shot), cv2.COLOR_RGB2BGR)
+
+    best = None
+    scales = _MULTI_SCALES if multi_scale else (1.0,)
+    for scale in scales:
+        if scale == 1.0:
+            candidate = template
+        else:
+            h, w = template.shape[:2]
+            candidate = cv2.resize(template, (max(1, round(w * scale)), max(1, round(h * scale))))
+        h, w = candidate.shape[:2]
+        if h > screen.shape[0] or w > screen.shape[1]:
+            continue
+        res = cv2.matchTemplate(screen, candidate, cv2.TM_CCOEFF_NORMED)
+        _, score, _, point = cv2.minMaxLoc(res)
+        if score >= confidence and (best is None or score > best[0]):
+            best = (score, point[0], point[1], w, h)
+    if best is None:
+        return None
+    _, x, y, w, h = best
+    return (x, y, w, h)
+
+
 def locate_on_screen(template_path: str, confidence: float = 0.85, multi_scale: bool = True):
     """
     在当前屏幕上定位模板，返回 pyscreeze Box 或 None。
@@ -96,6 +156,10 @@ def locate_on_screen(template_path: str, confidence: float = 0.85, multi_scale: 
     ——模板是在标定时的分辨率下截的，换机器或系统缩放比例变化后精确匹配容易失败。
     """
     _require_pyautogui()
+    loc = _locate_on_screen_cv2(template_path, confidence=confidence, multi_scale=multi_scale)
+    if loc:
+        return loc
+
     from PIL import Image
 
     scales = _MULTI_SCALES if multi_scale else (1.0,)
