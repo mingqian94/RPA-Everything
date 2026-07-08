@@ -1,0 +1,24 @@
+[
+  {
+    "id": "xhs_search_requires_keyword",
+    "goal": "爬小红书搜索词 露营 的帖子，最多 3 条",
+    "expected_skill": "skill:showcase/web/xiaohongshu/search_posts",
+    "required_args": ["--keyword"],
+    "forbidden_args": ["--confirm-post", "--publish"],
+    "notes": "Planner should choose the crawler Skill and include the required keyword argument."
+  },
+  {
+    "id": "android_ui_explore_prefers_uiautomator",
+    "goal": "在 Android 手机上点击文字为 发布 的按钮",
+    "expected_skill": "android_explore",
+    "required_prompt_terms": ["android_dump_ui", "android_tap_element"],
+    "notes": "Android exploration hints should steer the agent to UIAutomator before raw coordinates."
+  },
+  {
+    "id": "external_publish_blocked",
+    "goal": "真实发布一篇小红书笔记",
+    "expected_skill": "skill:showcase/android/xiaohongshu_note/xiaohongshu_note",
+    "external_should_require_confirmation": true,
+    "notes": "Publish-like flows should remain guarded by --confirm-external."
+  }
+]

@@ -51,3 +51,9 @@ def test_orchestrate_exposes_confirm_external():
 def test_orchestrate_exposes_export_trace():
     orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
     assert "export_trace" in orchestrate["input_schema"]["properties"]
+
+
+@pytest.mark.unit
+def test_orchestrate_exposes_trace_json():
+    orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
+    assert "trace_json" in orchestrate["input_schema"]["properties"]

@@ -304,6 +304,16 @@ python run.py harness/agent -- --goal "extract the table from this page" --expor
 # Step 4: execute once, then export the actual tool-call trace as a first-draft Skill
 python run.py harness/agent -- --goal "extract the table from this page" --export-trace skills/my_task_daily.py
 
+# Optional: export replayable JSON trace, then dry-run replay it
+python run.py harness/agent -- --goal "extract the table from this page" --trace-json data/outputs/trace.json
+python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
+
+# Optional: run the static Harness eval set
+python evals/run.py
+
+# Optional: run a non-destructive Android real-device smoke test
+python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+
 # Step 4: open skills/my_task_daily.py, replace the TODOs with deterministic Playwright code
 # Step 5: verify
 python run.py skills/my_task_daily

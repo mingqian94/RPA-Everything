@@ -35,6 +35,7 @@ from core.browser import BrowserManager
 from core.logger import SkillLogger
 from core.agent import run_android, run_browser, run_desktop
 from core.capabilities import build_skill_registry
+from harness.trace import export_trace_json
 
 # ── 技能注册表 ────────────────────────────────────────────────────────────────
 # type 决定用哪种 subagent；hint 是给 subagent 的上下文提示
@@ -104,6 +105,7 @@ def _registry_for_planner() -> dict:
     for name, spec in SKILL_REGISTRY.items():
         item = {
             "description": spec.get("description", ""),
+            "hint": spec.get("hint", ""),
             "type": spec.get("type", ""),
             "side_effect_level": spec.get("side_effect_level", "unknown"),
         }
@@ -363,7 +365,6 @@ async def _verify_and_confirm(sop: str, tasks: list[dict]) -> bool:
     print("\n🔍 正在截图验证结果...", flush=True)
 
     task_types = {SKILL_REGISTRY.get(t.get("skill"), {}).get("type") for t in tasks}
-
     try:
         if "browser" in task_types:
             page = await BrowserManager.current_page()
@@ -645,6 +646,7 @@ async def run(
     sop: str = "",
     confirm_external: bool = False,
     export_trace_path: str = "",
+    trace_json_path: str = "",
 ) -> list[dict]:
     log = SkillLogger("harness/agent")
     log.step(f"目标：{goal}")
@@ -691,6 +693,9 @@ async def run(
 
     if export_trace_path:
         export_trace(goal, results, export_trace_path)
+    if trace_json_path:
+        path = export_trace_json(goal, results, trace_json_path)
+        print(f"\nTrace JSON saved: {path}", flush=True)
 
     log.finish({"ok": ok, "total": len(results), "results": results})
     return results
@@ -710,6 +715,9 @@ def main():
     parser.add_argument("--export-trace", default="", metavar="PATH",
                         help="执行后把工具调用轨迹导出为初版 Skill 脚本")
 
+    parser.add_argument("--trace-json", default="", metavar="PATH",
+                        help="Export replayable tool-call trace JSON after execution")
+
     try:
         sep = sys.argv.index("--")
         argv = sys.argv[sep + 1:]
@@ -717,7 +725,15 @@ def main():
         argv = sys.argv[1:]
 
     args = parser.parse_args(argv)
-    asyncio.run(run(args.goal, args.dry_run, args.export, args.sop, args.confirm_external, args.export_trace))
+    asyncio.run(run(
+        args.goal,
+        args.dry_run,
+        args.export,
+        args.sop,
+        args.confirm_external,
+        args.export_trace,
+        args.trace_json,
+    ))
 
 
 if __name__ == "__main__":

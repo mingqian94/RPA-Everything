@@ -308,6 +308,16 @@ python run.py harness/agent -- --goal "提取这个网页里的表格数据" --e
 # 执行一次后，把真实工具调用轨迹导出为初稿 Skill
 python run.py harness/agent -- --goal "提取这个网页里的表格数据" --export-trace skills/my_task_daily.py
 
+# 可选：导出可 replay 的 JSON trace，再 dry-run 回放
+python run.py harness/agent -- --goal "提取这个网页里的表格数据" --trace-json data/outputs/trace.json
+python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
+
+# 可选：运行 Harness 静态评估集
+python evals/run.py
+
+# 可选：运行非破坏性的 Android 真机 smoke test
+python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+
 # 第四步：打开 skills/my_task_daily.py，把 TODO 替换成确定性 Playwright 代码
 # 第五步：验证
 python run.py skills/my_task_daily

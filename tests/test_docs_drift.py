@@ -37,3 +37,10 @@ def test_security_policy_is_linked_from_agent_docs():
     for filename in ("README.md", "README.zh-CN.md", "AGENTS.md"):
         text = (ROOT / filename).read_text(encoding="utf-8")
         assert "SECURITY.md" in text
+
+
+def test_evals_trace_replay_and_android_smoke_are_documented():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "evals/run.py" in readme
+    assert "harness/replay" in readme
+    assert "showcase/android/smoke_test/smoke_test" in readme

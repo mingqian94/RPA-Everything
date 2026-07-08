@@ -100,6 +100,18 @@ python run.py harness/agent -- --goal "..." --export skills/my_new_skill.py
 # 执行一次后导出真实工具调用轨迹，作为可 review 的初稿 Skill
 python run.py harness/agent -- --goal "..." --export-trace skills/my_new_skill.py
 
+# 执行一次后导出可 replay 的 JSON trace
+python run.py harness/agent -- --goal "..." --trace-json data/outputs/trace.json
+
+# dry-run 回放 trace，确认会执行哪些工具调用
+python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
+
+# 运行 Harness 静态评估集
+python evals/run.py
+
+# Android 真机 smoke test（默认不注入输入）
+python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+
 # 提供 SOP 文档，执行后截图验证结果是否符合规范
 python run.py harness/agent -- --goal "..." --sop sops/feishu/post_circle.md
 
