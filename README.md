@@ -156,7 +156,9 @@ rpa-everything/
 │   │   ├── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
 │   │   └── xhs/             # Xiaohongshu user/search/detail crawling showcases
 │   ├── app/
-│   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
+│   │   ├── integration/     # MCP / CLI / API direct integrations (no screen or vision)
+│   │   └── desktop/
+│   │       └── template_click/ # Image-template-matching click when no direct integration exists
 │   ├── mobile/
 │   │   ├── android/
 │   │   │   ├── adb_basics/  # Android ADB basics: devices, screenshots, taps, swipes, push files
@@ -559,7 +561,7 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 | `showcase/web/xhs/user_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll a user's posts; `--user-url <URL> --output data/xhs_user.json` |
 | `showcase/web/xhs/search_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll keyword/tag results; `--keyword "camping" --output data/xhs_search.json` |
 | `showcase/web/xhs/post_detail` | Browser DOM crawl | ✅ Runnable | Extract visible text, images, videos, engagement; `--url <URL>` |
-| `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
+| `showcase/app/desktop/template_click` | Desktop image template matching | ✅ Runnable | Fallback when no MCP/CLI/API integration exists; zero AI cost; `--template assets/<system>/<button>.png` |
 | `showcase/mobile/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
 | `showcase/mobile/android/xhs_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
 | `showcase/mobile/ios/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |

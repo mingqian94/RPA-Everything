@@ -54,3 +54,13 @@ def test_non_developer_onboarding_is_documented():
         assert "harness/doctor" in text
         assert "harness/runtime" in text
         assert "workflow-template.zh-CN.md" in text
+
+
+def test_app_routes_distinguish_direct_integrations_from_desktop_fallbacks():
+    text = (ROOT / "showcase" / "app" / "README.md").read_text(encoding="utf-8")
+    integration = (ROOT / "showcase" / "app" / "integration" / "README.md").read_text(encoding="utf-8")
+
+    assert "integration/" in text
+    assert "desktop/" in text
+    assert "视觉识别" in text
+    assert "MCP Server、CLI 或 API" in integration

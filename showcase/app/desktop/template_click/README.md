@@ -8,7 +8,7 @@
 ```bash
 # 1. 截一张目标按钮/图标的图，存到 assets/<系统名>/
 # 2. 运行：
-python run.py showcase/app/template_click/template_click -- --template assets/feishu/approve_btn.png
+python run.py showcase/app/desktop/template_click/template_click -- --template assets/feishu/approve_btn.png
 
 # 可选参数
 #   --app "飞书"        先把应用切到前台

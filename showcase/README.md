@@ -14,11 +14,22 @@
 
 > `web/` 下的 Skill 来自真实系统的结构简化版，直接运行需要对应系统权限，**主要价值是提供结构参考**，照着把系统地址和字段替换成自己的即可。
 
-## App（桌面应用）
+## App（应用）
 
-暂无内置示例——桌面应用的模板截图跟每个人的系统、分辨率强相关，不适合直接复用别人截的图。
-默认技术路线是图像模板匹配（`core.desktop.locate_and_click()`），不是截图发给 LLM 猜坐标，
-参考 [app/README.md](app/README.md) 自己写一个。
+应用按控制通道分开：
+
+| 分类 | 适用情况 | 是否使用视觉识别 |
+|---|---|---|
+| `app/integration/` | 应用有已接入的 MCP、CLI 或 API | 否，直接走结构化接口 |
+| `app/desktop/` | 没有可用直连能力，需要操作本机窗口 | 优先 UI 节点/图像模板；最后才退到视觉识别 |
+
+目前可运行示例是桌面兜底路线：
+
+| Skill | 说明 | 需要 LLM | 运行命令 |
+|---|---|---|---|
+| `app/desktop/template_click` | 图像模板匹配点击 | 否 | `python run.py showcase/app/desktop/template_click/template_click -- --template assets/<系统名>/按钮.png` |
+
+直连类需要按具体应用完成安装和认证后再加入；不能把没有接入的 MCP/CLI 当成已可用能力。详见 [app/README.md](app/README.md)。
 
 ## Office 文件
 

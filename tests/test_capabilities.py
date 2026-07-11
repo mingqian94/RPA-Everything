@@ -21,3 +21,11 @@ def test_registry_includes_builtins_and_discovered_skills():
     args = {name: item for item in search["args_schema"] for name in item["names"]}
     assert args["--keyword"]["required"] is True
     assert "--output" in args
+
+
+def test_desktop_app_showcase_is_registered_under_fallback_route():
+    registry = build_skill_registry()
+    key = "skill:showcase/app/desktop/template_click/template_click"
+
+    assert key in registry
+    assert "桌面 UI Skill" in registry[key]["hint"]

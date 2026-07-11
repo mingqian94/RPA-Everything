@@ -183,6 +183,7 @@ def plan(goal: str) -> list[dict]:
 
 规划原则：
 - skill 必须来自可用技能列表，不要发明技能名。
+- 应用目标先检查可用技能中是否已有 `showcase/app/integration/` 的对应直连 Skill；存在时优先选它，直接用 MCP/CLI/API 完成并验证结果，不要打开窗口、截图或做视觉识别。不存在时不能假设应用有直连能力，再考虑 `showcase/app/desktop/` 或 desktop_*。
 - 目标明确属于网页/浏览器时选 browser_*；属于本机应用时选 desktop_*；属于手机/Android/ADB 时选 android_*。
 - 用户目标是先确认环境、设备、权限是否可用时，优先规划 diagnostics 类任务。
 - 真实外部副作用场景（发布、发送、审批、付款等）要在 goal 中要求执行后验证；没有确定成功信号时说明“待确认”。

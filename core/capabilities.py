@@ -181,6 +181,20 @@ def _infer_side_effect_level(skill_path: str) -> str:
     return "unknown"
 
 
+def _skill_route_hint(skill_path: str) -> str:
+    if skill_path.startswith("showcase/app/integration/"):
+        return (
+            "这是应用的 MCP/CLI/API 直连 Skill：只使用其结构化接口和返回结果验证，"
+            "不要打开应用窗口、截图或使用视觉识别。"
+        )
+    if skill_path.startswith("showcase/app/desktop/"):
+        return (
+            "这是没有直连接口时的桌面 UI Skill：优先使用 UI 节点或图像模板匹配；"
+            "只有两者都不可用时才考虑视觉识别。"
+        )
+    return ""
+
+
 def build_skill_registry(include_discovered: bool = True) -> dict[str, dict]:
     """Return the capability registry used by the Harness planner."""
     registry = {k: dict(v) for k, v in BUILTIN_CAPABILITIES.items()}
@@ -197,6 +211,7 @@ def build_skill_registry(include_discovered: bool = True) -> dict[str, dict]:
             "hint": (
                 f"这是可直接运行的已固化 Skill：python run.py {skill_path}。"
                 "如果需要参数，请在计划的 args 数组中给出 run.py -- 后面的 CLI 参数。"
+                + _skill_route_hint(skill_path)
             ),
             "path": skill_path,
         }
