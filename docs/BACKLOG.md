@@ -35,13 +35,16 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 ### P1: Trustworthy Skill Lifecycle
 
 - [ ] Make Skill manifests easier to inspect: input assumptions, target platform, required permissions, external-action risk, and last supervised run.
+- [ ] Record the evidence level used by each solidified step (network/API, DOM selector, template, coordinate), its fallback, and the latest supervised proof.
 - [ ] Add regression fixtures for trace solidification and redaction so a framework change cannot weaken safety boundaries unnoticed.
 - [ ] Improve run history export for bug reports while keeping screenshots, URLs, and secrets opt-in and redacted by default.
 - [ ] Add a clear recovery path when a deterministic Skill detects UI drift: stop, capture evidence, and return a repair task to the Agent.
+- [ ] Return `needs_human_step` for login, MFA, CAPTCHA, or a real-world decision, including evidence, the requested user action, and a resume condition.
 
 ### P1: Non-Developer Onboarding
 
 - [ ] Reduce first-run configuration to a guided doctor result with precise next actions, without handling or storing user secrets in the repository.
+- [ ] Add a read-only Agent runtime snapshot: available Skills, connected browser/device state, safety policy, and the recommended next command.
 - [ ] Add a plain-language Skill review checklist before a user enables scheduling or external actions.
 - [ ] Provide a minimal "first useful task" walkthrough that takes under ten minutes and has no external side effect.
 
@@ -49,6 +52,7 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 
 - [ ] Add a repeatable desktop showcase that uses template matching instead of coordinates and documents the asset-maintenance cost.
 - [ ] Add a browser showcase that demonstrates UI drift detection and safe refusal to continue.
+- [ ] Prototype a compact browser exploration-state view; use it only to guide exploration and convert it into durable selectors during solidification.
 - [ ] Add an Android evidence run that uses UI nodes and deliberately stops before final publishing.
 - [ ] Keep iPhone support explicitly assistive until a reliable, reviewable remote-control path exists.
 
