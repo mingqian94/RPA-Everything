@@ -12,6 +12,53 @@
 
 ---
 
+## 小白最快上手
+
+目标不是让你学编程，而是让你把工作步骤讲清楚，Agent 帮你生成可运行脚本。
+
+### 1. 一键安装
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\setup.ps1
+```
+
+macOS / Linux：
+
+```bash
+sh tools/setup.sh
+```
+
+安装完成后，打开 `config.yaml`，填写 `llm.api_key` 和 `llm.model`。
+
+### 2. 体检环境
+
+```bash
+python run.py harness/doctor
+```
+
+如果显示 `FAIL`，按提示修复；如果只是 Android/iPhone 的 `WARN`，不用手机能力时可以先忽略。
+
+### 3. 讲清楚工作步骤，让 Agent 生成 Skill
+
+先用 [任务描述模板](docs/workflow-template.zh-CN.md) 把流程写清楚，然后执行：
+
+```bash
+python run.py harness/agent -- --goal "把我描述的流程先规划一下，不要真正提交或发布" --dry-run
+python run.py harness/agent -- --goal "按我描述的流程跑通一次，并导出成可复用 Skill" --export skills/my_workflow.py
+python run.py skills/my_workflow
+```
+
+浏览器类任务先启动专用 Chrome：
+
+```bash
+tools\start_chrome.bat     # Windows
+sh tools/start_chrome.sh   # macOS
+```
+
+---
+
 ## 和同类工具的区别
 
 | 工具 | 定位 | 问题 |

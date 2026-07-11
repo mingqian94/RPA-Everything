@@ -82,6 +82,11 @@ python /path/to/rpa-everything/mcp_server.py
 **执行固化 Skill：**
 
 ```bash
+# 小白首次安装 / 体检
+powershell -ExecutionPolicy Bypass -File tools\setup.ps1  # Windows
+sh tools/setup.sh                                         # macOS / Linux
+python run.py harness/doctor
+
 python run.py showcase/web/extract_table -- --url https://example.com
 python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营" --output data/xhs_search.json
 python run.py showcase/web/xiaohongshu/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
@@ -153,6 +158,7 @@ python run.py
 | Chrome 以调试端口启动 | `curl -s http://localhost:9222/json` 有返回 |
 | Python 依赖已安装 | `pip install -r requirements.txt` |
 | config.yaml 已配置 | 至少填写 `llm.api_key` |
+| 新用户环境体检 | `python run.py harness/doctor` |
 | Android ADB 已配置（Android 手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
 | iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/mobile/iphone_assist/iphone_assist -- --devices` |
 | macOS 屏幕录制权限 | 系统设置 → 隐私与安全性 → 屏幕录制 → 授权终端 |

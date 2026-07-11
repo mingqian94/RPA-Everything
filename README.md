@@ -12,6 +12,53 @@ An AI-powered automation framework for everyone who works with repetitive comput
 
 ---
 
+## Fastest Path For Non-Developers
+
+The goal is not to learn programming. Describe the work steps clearly, let the Agent generate the Skill, then run the Skill directly.
+
+### 1. One-command setup
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\setup.ps1
+```
+
+macOS / Linux:
+
+```bash
+sh tools/setup.sh
+```
+
+After setup, open `config.yaml` and fill `llm.api_key` / `llm.model`.
+
+### 2. Check readiness
+
+```bash
+python run.py harness/doctor
+```
+
+Fix `FAIL` items. Android/iPhone `WARN` items are optional until you need phone automation.
+
+### 3. Describe the workflow and generate a Skill
+
+Use [the workflow template](docs/workflow-template.zh-CN.md) if you need a structure, then run:
+
+```bash
+python run.py harness/agent -- --goal "Plan my described workflow first. Do not submit, publish, or send anything." --dry-run
+python run.py harness/agent -- --goal "Run through my described workflow once and export a reusable Skill." --export skills/my_workflow.py
+python run.py skills/my_workflow
+```
+
+For browser tasks, start the dedicated Chrome first:
+
+```bash
+tools\start_chrome.bat     # Windows
+sh tools/start_chrome.sh   # macOS
+```
+
+---
+
 ## How it differs from similar tools
 
 | Tool | Positioning | Limitation |

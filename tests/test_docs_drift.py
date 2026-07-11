@@ -44,3 +44,12 @@ def test_evals_trace_replay_and_android_smoke_are_documented():
     assert "evals/run.py" in readme
     assert "harness/replay" in readme
     assert "showcase/android/smoke_test/smoke_test" in readme
+
+
+def test_non_developer_onboarding_is_documented():
+    for filename in ("README.md", "README.zh-CN.md"):
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        assert "setup.ps1" in text
+        assert "tools/setup.sh" in text
+        assert "harness/doctor" in text
+        assert "workflow-template.zh-CN.md" in text
