@@ -314,6 +314,9 @@ python evals/run.py
 # Optional: run a non-destructive Android real-device smoke test
 python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
 
+# Optional: also verify file push by creating and deleting a tiny probe file
+python run.py showcase/android/smoke_test/smoke_test -- --include-file-check --output data/outputs/android_smoke.json
+
 # Step 4: open skills/my_task_daily.py, replace the TODOs with deterministic Playwright code
 # Step 5: verify
 python run.py skills/my_task_daily
@@ -422,9 +425,9 @@ Browser, desktop, and Android tools share one schema definition with the agentic
 | `android_tap_element` | Tap by text, resource-id, or content-desc |
 | `android_swipe` | Swipe by pixels or normalized screen ratio |
 | `android_key` | Send an Android keyevent, e.g. `KEYCODE_BACK` |
-| `android_type` | Type text; `unicode=true` uses ADBKeyboard broadcast input |
+| `android_type` | Type text; `unicode=true` uses ADBKeyboard broadcast input and restores the previous IME when possible |
 | `android_push_file` | Push a file to the device, optionally trigger media scan |
-| `android_diagnostics` | Check ADB availability, device state, resolution, and screenshot permission |
+| `android_diagnostics` | Check ADB availability, device state, hardware serial, resolution, screenshot, UIAutomator, ADBKeyboard, and optional input/file-push probes |
 
 **Skill management**
 

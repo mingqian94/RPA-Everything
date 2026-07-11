@@ -13,6 +13,7 @@ import platform
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -166,9 +167,9 @@ class AndroidDevice:
         self.serial = serial or first_device(self.adb)
         self._resolution: tuple[int, int] | None = None
 
-    def _run(self, args: list[str], binary: bool = False, timeout: float = 30):
+    def _run(self, args: list[str], binary: bool = False, timeout: float = 30, stdin: bytes | None = None):
         cmd = [self.adb, "-s", self.serial, *args]
-        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+        proc = subprocess.run(cmd, input=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
         if binary:
             if proc.returncode != 0:
                 err = proc.stderr.decode("utf-8", "replace")
@@ -181,7 +182,13 @@ class AndroidDevice:
         return out
 
     def shell(self, command: str, timeout: float = 30) -> str:
-        out = self._run(["shell", command], timeout=timeout)
+        if any(ord(ch) > 127 for ch in command):
+            # Windows adb.exe can corrupt non-ASCII shell argv (for example
+            # Chinese folders under /sdcard). Sending the shell script through
+            # stdin keeps it UTF-8 clean.
+            out = self._run(["shell"], timeout=timeout, stdin=f"{command}\nexit\n".encode("utf-8"))
+        else:
+            out = self._run(["shell", command], timeout=timeout)
         if "SecurityException" in out and "INJECT_EVENTS" in out:
             raise InjectPermissionError(
                 "Synthetic input was blocked. On MIUI/HyperOS, enable USB debugging "
@@ -301,14 +308,47 @@ class AndroidDevice:
         out = self.shell("pm list packages com.android.adbkeyboard", timeout=10)
         return "com.android.adbkeyboard" in out
 
+    def hardware_serial(self) -> str:
+        return self.shell("getprop ro.serialno", timeout=10).strip()
+
     def current_ime(self) -> str:
         return self.shell("settings get secure default_input_method", timeout=10).strip()
+
+    def enabled_imes(self) -> list[str]:
+        out = self.shell("ime list -s", timeout=10)
+        return [line.strip() for line in out.splitlines() if line.strip()]
+
+    def choose_restore_ime(self, previous_ime: str = "", preferred_ime: str = "") -> str:
+        enabled = self.enabled_imes()
+        for candidate in (preferred_ime, previous_ime):
+            if candidate and candidate != "null" and candidate in enabled:
+                return candidate
+        for candidate in enabled:
+            if "adbkeyboard" not in candidate.lower():
+                return candidate
+        return previous_ime if previous_ime and previous_ime != "null" else ""
+
+    def restore_ime(self, previous_ime: str = "", preferred_ime: str = "") -> bool:
+        target = self.choose_restore_ime(previous_ime=previous_ime, preferred_ime=preferred_ime)
+        if not target:
+            return False
+        try:
+            self.set_ime(target)
+            return True
+        except Exception:
+            return False
 
     def set_ime(self, ime: str) -> None:
         self.shell(f"ime enable {ime}", timeout=10)
         self.shell(f"ime set {ime}", timeout=10)
 
-    def input_text(self, text: str, unicode: bool = False, restore_ime: bool = True) -> None:
+    def input_text(
+        self,
+        text: str,
+        unicode: bool = False,
+        restore_ime: bool = True,
+        restore_ime_preferred: str = "",
+    ) -> None:
         if unicode:
             adb_ime = "com.android.adbkeyboard/.AdbIME"
             if not self.adbkeyboard_installed():
@@ -322,11 +362,8 @@ class AndroidDevice:
             try:
                 self.shell(f"am broadcast -a ADB_INPUT_B64 --es msg {payload}")
             finally:
-                if restore_ime and previous_ime and previous_ime != "null":
-                    try:
-                        self.set_ime(previous_ime)
-                    except Exception:
-                        pass
+                if restore_ime:
+                    self.restore_ime(previous_ime=previous_ime, preferred_ime=restore_ime_preferred)
             return
         escaped = text.replace("%", "%25").replace(" ", "%s").replace("&", r"\&")
         self.shell(f"input text {escaped}")
@@ -351,10 +388,38 @@ class DiagnosticResult:
     detail: str = ""
 
 
-def run_diagnostics(serial: str | None = None, adb: str | None = None, include_input_check: bool = False) -> list[DiagnosticResult]:
+def verify_file_push(serial: str | None = None, adb: str | None = None, remote_dir: str = "/sdcard/Download") -> DiagnosticResult:
+    """Verify the Android push path with a tiny temporary file, then remove it."""
+    dev = AndroidDevice(serial=serial, adb=adb)
+    remote = f"{remote_dir.rstrip('/')}/_rpa_everything_push_probe.txt"
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            local = Path(tmp) / "_rpa_everything_push_probe.txt"
+            local.write_text("rpa-everything push probe\n", encoding="utf-8")
+            dev.shell(f"mkdir -p {remote_dir}", timeout=10)
+            dev.push(local, remote)
+            listing = dev.shell(f"ls {remote}", timeout=10)
+            ok = "_rpa_everything_push_probe.txt" in listing
+            return DiagnosticResult("file_push", ok, remote if ok else listing.strip())
+    except Exception as e:
+        return DiagnosticResult("file_push", False, str(e))
+    finally:
+        try:
+            dev.shell(f"rm -f {remote}", timeout=10)
+        except Exception:
+            pass
+
+
+def run_diagnostics(
+    serial: str | None = None,
+    adb: str | None = None,
+    include_input_check: bool = False,
+    include_file_check: bool = False,
+) -> list[DiagnosticResult]:
     """Run non-destructive checks by default.
 
-    Set include_input_check=True to send HOME as a safe-ish input test.
+    Set include_input_check=True to send HOME.
+    Set include_file_check=True to push and delete a tiny probe file.
     """
     results: list[DiagnosticResult] = []
     try:
@@ -369,6 +434,12 @@ def run_diagnostics(serial: str | None = None, adb: str | None = None, include_i
         results.append(DiagnosticResult("resolution", True, f"{w}x{h}"))
     except Exception as e:
         results.append(DiagnosticResult("resolution", False, str(e)))
+
+    try:
+        hw_serial = dev.hardware_serial()
+        results.append(DiagnosticResult("hardware_serial", bool(hw_serial), hw_serial or "empty"))
+    except Exception as e:
+        results.append(DiagnosticResult("hardware_serial", False, str(e)))
 
     try:
         png = dev.screencap()
@@ -388,6 +459,9 @@ def run_diagnostics(serial: str | None = None, adb: str | None = None, include_i
         results.append(DiagnosticResult("adbkeyboard", ok, detail))
     except Exception as e:
         results.append(DiagnosticResult("adbkeyboard", False, str(e)))
+
+    if include_file_check:
+        results.append(verify_file_push(serial=dev.serial, adb=dev.adb))
 
     if include_input_check:
         try:

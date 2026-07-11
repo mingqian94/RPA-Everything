@@ -46,7 +46,8 @@ Desktop and Android tools can click real UI, type text, push files, and trigger 
 - Prefer UI selectors where available (`android_dump_ui`, `android_tap_element`) before raw coordinates.
 - Prefer `--dry-run` for showcase Skills that support it.
 - Keep final publish/send/approve steps separate and guarded by explicit confirmation.
-- For Android unicode input, ADBKeyboard may be enabled temporarily and then restored. Verify the device input method if a run is interrupted.
+- For Android unicode input, ADBKeyboard may be enabled temporarily and then restored. The framework checks enabled IMEs before restoring when possible, but verify the device input method if a run is interrupted.
+- Optional Android file-push diagnostics create and delete a tiny probe file under `/sdcard/Download`; do not enable them on devices where any filesystem write is unacceptable.
 
 ## Generated Skills
 

@@ -243,6 +243,7 @@ ANDROID_TOOLS = [
                 "text": {"type": "string"},
                 "unicode": {"type": "boolean", "default": False},
                 "restore_ime": {"type": "boolean", "default": True},
+                "restore_ime_preferred": {"type": "string", "description": "Optional preferred IME to restore after ADBKeyboard input."},
             },
             "required": ["text"],
         },
@@ -269,6 +270,7 @@ ANDROID_TOOLS = [
             "properties": {
                 "serial": {"type": "string"},
                 "include_input_check": {"type": "boolean", "default": False},
+                "include_file_check": {"type": "boolean", "default": False},
             },
         },
     },
@@ -416,6 +418,7 @@ def execute_android_tool(name: str, args: dict) -> list[dict]:
             args["text"],
             unicode=bool(args.get("unicode", False)),
             restore_ime=bool(args.get("restore_ime", True)),
+            restore_ime_preferred=args.get("restore_ime_preferred", ""),
         )
         return [{"type": "text", "text": "Android text input complete."}]
 
@@ -430,6 +433,7 @@ def execute_android_tool(name: str, args: dict) -> list[dict]:
         results = [r.__dict__ for r in run_diagnostics(
             serial=args.get("serial"),
             include_input_check=bool(args.get("include_input_check", False)),
+            include_file_check=bool(args.get("include_file_check", False)),
         )]
         return [{"type": "text", "text": _json.dumps(results, ensure_ascii=False, indent=2)}]
 

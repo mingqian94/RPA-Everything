@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--devices", action="store_true", help="List online Android devices.")
     parser.add_argument("--diagnostics", action="store_true", help="Run non-destructive diagnostics.")
     parser.add_argument("--diagnostics-input", action="store_true", help="Also send KEYCODE_HOME during diagnostics.")
+    parser.add_argument("--diagnostics-file", action="store_true", help="Also push and delete a tiny probe file.")
     parser.add_argument("--screenshot", help="Save a device screenshot to this PNG path.")
     parser.add_argument("--tap", nargs=2, type=int, metavar=("X", "Y"), help="Tap absolute pixels.")
     parser.add_argument("--tap-ratio", nargs=2, type=float, metavar=("RX", "RY"), help="Tap by screen ratio.")
@@ -45,6 +46,7 @@ def main():
         results = [r.__dict__ for r in run_diagnostics(
             serial=args.serial or None,
             include_input_check=args.diagnostics_input,
+            include_file_check=args.diagnostics_file,
         )]
         print(json.dumps(results, ensure_ascii=False, indent=2))
         log.finish({"diagnostics": results})

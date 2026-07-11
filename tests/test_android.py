@@ -72,6 +72,27 @@ def test_tap_ratio_rejects_out_of_range(monkeypatch):
 
 
 @pytest.mark.unit
+def test_shell_sends_non_ascii_command_via_stdin(monkeypatch):
+    dev = android.AndroidDevice.__new__(android.AndroidDevice)
+    dev.adb = "adb"
+    dev.serial = "serial"
+    calls = []
+
+    def fake_run(args, binary=False, timeout=30, stdin=None):
+        calls.append({"args": args, "stdin": stdin})
+        return ""
+
+    monkeypatch.setattr(dev, "_run", fake_run)
+
+    dev.shell("mkdir -p /sdcard/Pictures/朋友圈素材")
+
+    assert calls == [{
+        "args": ["shell"],
+        "stdin": "mkdir -p /sdcard/Pictures/朋友圈素材\nexit\n".encode("utf-8"),
+    }]
+
+
+@pytest.mark.unit
 def test_parse_ui_xml_extracts_nodes():
     xml = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
 <hierarchy>
@@ -126,6 +147,8 @@ def test_unicode_input_switches_and_restores_ime(monkeypatch):
             return "package:com.android.adbkeyboard"
         if command == "settings get secure default_input_method":
             return "com.vendor/.Ime\n"
+        if command == "ime list -s":
+            return "com.android.adbkeyboard/.AdbIME\ncom.vendor/.Ime\n"
         return ""
 
     monkeypatch.setattr(dev, "shell", fake_shell)
@@ -135,6 +158,23 @@ def test_unicode_input_switches_and_restores_ime(monkeypatch):
     assert "ime set com.android.adbkeyboard/.AdbIME" in calls
     assert any("ADB_INPUT_B64" in call for call in calls)
     assert calls[-1] == "ime set com.vendor/.Ime"
+
+
+@pytest.mark.unit
+def test_restore_ime_uses_preferred_when_previous_missing(monkeypatch):
+    dev = android.AndroidDevice.__new__(android.AndroidDevice)
+    calls = []
+
+    monkeypatch.setattr(dev, "enabled_imes", lambda: [
+        "com.android.adbkeyboard/.AdbIME",
+        "com.vendor/.PreferredIme",
+    ])
+    monkeypatch.setattr(dev, "set_ime", lambda ime: calls.append(ime))
+
+    restored = dev.restore_ime(previous_ime="com.old/.Ime", preferred_ime="com.vendor/.PreferredIme")
+
+    assert restored is True
+    assert calls == ["com.vendor/.PreferredIme"]
 
 
 @pytest.mark.unit

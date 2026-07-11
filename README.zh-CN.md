@@ -318,6 +318,9 @@ python evals/run.py
 # 可选：运行非破坏性的 Android 真机 smoke test
 python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
 
+# 可选：额外验证文件推送链路，会创建并删除一个很小的探针文件
+python run.py showcase/android/smoke_test/smoke_test -- --include-file-check --output data/outputs/android_smoke.json
+
 # 第四步：打开 skills/my_task_daily.py，把 TODO 替换成确定性 Playwright 代码
 # 第五步：验证
 python run.py skills/my_task_daily
@@ -426,9 +429,9 @@ MCP Server 是本框架的对话入口，让用户无需写代码，通过与 Cl
 | `android_tap_element` | 按文字、resource-id 或 content-desc 点击元素 |
 | `android_swipe` | 按像素坐标或屏幕比例滑动 |
 | `android_key` | 发送 Android keyevent，如 `KEYCODE_BACK` |
-| `android_type` | 输入文字；`unicode=true` 时使用 ADBKeyboard 广播输入 |
+| `android_type` | 输入文字；`unicode=true` 时使用 ADBKeyboard 广播输入，并尽量恢复原输入法 |
 | `android_push_file` | 推送文件到设备，可选触发媒体扫描 |
-| `android_diagnostics` | 检查 ADB、设备状态、分辨率和截图权限 |
+| `android_diagnostics` | 检查 ADB、设备状态、硬件序列号、分辨率、截图、UIAutomator、ADBKeyboard，以及可选输入/文件推送探针 |
 
 **Skill 管理**
 

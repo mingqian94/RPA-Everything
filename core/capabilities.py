@@ -46,7 +46,7 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
             "先调用 android_devices / android_diagnostics 确认设备在线；"
             "优先使用 android_dump_ui / android_tap_element 按 text/resource-id/content-desc 操作；"
             "UIAutomator 找不到时再使用 0~1 屏幕比例坐标，避免写死像素；"
-            "中文、emoji、换行文本用 android_type unicode=true；"
+            "中文、emoji、换行文本用 android_type unicode=true，并让框架恢复用户原输入法；"
             "真实外部副作用（发布/发送/付款等）完成后只标记待确认，除非有明确成功信号"
         ),
     },
@@ -56,7 +56,8 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
         "description": "检查 Android 自动化前置条件：ADB 连接、截图、可选输入注入、文件推送等",
         "hint": (
             "先列出设备，再运行 android_diagnostics；"
-            "默认不要启用输入检查，除非用户明确允许，因为 include_input_check 会发送 HOME"
+            "默认不要启用输入检查，除非用户明确允许，因为 include_input_check 会发送 HOME；"
+            "include_file_check 会写入并删除一个探针文件，只有要验证素材/文件推送链路时再打开"
         ),
     },
     "feishu_post": {

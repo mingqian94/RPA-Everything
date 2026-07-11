@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description="Android real-device smoke test")
     parser.add_argument("--serial", default="", help="ADB serial. Defaults to first online device.")
     parser.add_argument("--include-input-check", action="store_true", help="Also send KEYCODE_HOME.")
+    parser.add_argument("--include-file-check", action="store_true", help="Also push and delete a tiny probe file.")
     parser.add_argument("--output", default="", help="Output JSON path.")
     args = parser.parse_args(_argv())
 
@@ -30,6 +31,7 @@ def main():
     results = [r.__dict__ for r in run_diagnostics(
         serial=args.serial or None,
         include_input_check=args.include_input_check,
+        include_file_check=args.include_file_check,
     )]
     ok = all(item["ok"] for item in results if item["name"] != "adbkeyboard")
     payload = {"ok": ok, "results": results}
