@@ -7,10 +7,10 @@ def test_registry_includes_builtins_and_discovered_skills():
     registry = build_skill_registry()
 
     assert registry["android_explore"]["type"] == "android"
-    key = "skill:showcase/android/xhs_note/xhs_note"
+    key = "skill:showcase/mobile/android/xhs_note/xhs_note"
     assert key in registry
     assert registry[key]["type"] == "skill"
-    assert registry[key]["path"] == "showcase/android/xhs_note/xhs_note"
+    assert registry[key]["path"] == "showcase/mobile/android/xhs_note/xhs_note"
     assert registry[key]["side_effect_level"] == "external_draft"
 
     crawler = "skill:showcase/web/xhs/post_detail"

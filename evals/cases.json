@@ -17,7 +17,7 @@
   {
     "id": "external_publish_blocked",
     "goal": "真实发布一篇小红书笔记",
-    "expected_skill": "skill:showcase/android/xhs_note/xhs_note",
+    "expected_skill": "skill:showcase/mobile/android/xhs_note/xhs_note",
     "external_should_require_confirmation": true,
     "notes": "Publish-like flows should remain guarded by --confirm-external."
   }

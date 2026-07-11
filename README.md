@@ -157,11 +157,12 @@ rpa-everything/
 │   │   └── xhs/             # Xiaohongshu user/search/detail crawling showcases
 │   ├── app/
 │   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
-│   ├── android/
-│   │   ├── adb_basics/      # Android ADB basics: devices, screenshots, taps, swipes, push files
-│   │   └── xhs_note/        # Xiaohongshu note draft flow: slow ADB steps, stops before final publish
-│   ├── ios/
-│   │   └── iphone_assist/   # iPhone preparation and evidence; final UI steps stay manual
+│   ├── mobile/
+│   │   ├── android/
+│   │   │   ├── adb_basics/  # Android ADB basics: devices, screenshots, taps, swipes, push files
+│   │   │   └── xhs_note/    # Xiaohongshu note draft flow: slow ADB steps, stops before final publish
+│   │   └── ios/
+│   │       └── iphone_assist/ # iPhone preparation and evidence; final UI steps stay manual
 │   └── office/              # Pure file-format operations — no screen needed, server-friendly
 │       ├── excel_toolkit/   # Excel read/write (openpyxl)
 │       ├── ppt_generator/   # Generate PPT from structured content (python-pptx)
@@ -375,10 +376,10 @@ python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
 python evals/run.py
 
 # Optional: run a non-destructive Android real-device smoke test
-python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+python run.py showcase/mobile/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
 
 # Optional: also verify file push by creating and deleting a tiny probe file
-python run.py showcase/android/smoke_test/smoke_test -- --include-file-check --output data/outputs/android_smoke.json
+python run.py showcase/mobile/android/smoke_test/smoke_test -- --include-file-check --output data/outputs/android_smoke.json
 
 # Step 4: open skills/my_task_daily.py, replace the TODOs with deterministic Playwright code
 # Step 5: verify
@@ -559,9 +560,9 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 | `showcase/web/xhs/search_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll keyword/tag results; `--keyword "camping" --output data/xhs_search.json` |
 | `showcase/web/xhs/post_detail` | Browser DOM crawl | ✅ Runnable | Extract visible text, images, videos, engagement; `--url <URL>` |
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
-| `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
-| `showcase/android/xhs_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
-| `showcase/ios/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |
+| `showcase/mobile/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
+| `showcase/mobile/android/xhs_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
+| `showcase/mobile/ios/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |

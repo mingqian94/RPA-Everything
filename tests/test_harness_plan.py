@@ -78,14 +78,14 @@ def test_plan_empty_tasks_raises(monkeypatch):
 def test_android_skills_registered():
     assert harness.SKILL_REGISTRY["android_explore"]["type"] == "android"
     assert harness.SKILL_REGISTRY["android_diagnostics"]["type"] == "android"
-    assert "skill:showcase/android/xhs_note/xhs_note" in harness.SKILL_REGISTRY
+    assert "skill:showcase/mobile/android/xhs_note/xhs_note" in harness.SKILL_REGISTRY
 
 
 @pytest.mark.unit
 def test_ios_semi_auto_registered():
     assert harness.SKILL_REGISTRY["ios_semi_auto"]["type"] == "skill"
-    assert harness.SKILL_REGISTRY["ios_semi_auto"]["path"] == "showcase/ios/iphone_assist/iphone_assist"
-    assert "skill:showcase/ios/iphone_assist/iphone_assist" in harness.SKILL_REGISTRY
+    assert harness.SKILL_REGISTRY["ios_semi_auto"]["path"] == "showcase/mobile/ios/iphone_assist/iphone_assist"
+    assert "skill:showcase/mobile/ios/iphone_assist/iphone_assist" in harness.SKILL_REGISTRY
 
 
 @pytest.mark.unit
@@ -149,7 +149,7 @@ def test_run_task_dispatches_saved_skill(monkeypatch):
 
     monkeypatch.setattr(harness, "_run_saved_skill", fake_run_saved_skill)
     result = asyncio.run(harness._run_task({
-        "skill": "skill:showcase/android/xhs_note/xhs_note",
+        "skill": "skill:showcase/mobile/android/xhs_note/xhs_note",
         "goal": "生成小红书笔记草稿",
         "args": ["--dry-run", "--profile", "data/xhs_profile.json"],
         "label": "小红书草稿",
@@ -177,7 +177,7 @@ def test_external_commit_requires_confirmation(monkeypatch):
             pass
 
     result = asyncio.run(harness._run_task({
-        "skill": "skill:showcase/android/xhs_note/xhs_note",
+        "skill": "skill:showcase/mobile/android/xhs_note/xhs_note",
         "goal": "真实发布小红书笔记",
         "args": ["--profile", "data/xhs_profile.json", "--confirm-post"],
         "label": "发布",

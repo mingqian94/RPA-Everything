@@ -36,11 +36,11 @@ android:
 ## Showcase / 示例
 
 ```bash
-python run.py showcase/android/adb_basics/adb_basics -- --devices
-python run.py showcase/android/adb_basics/adb_basics -- --diagnostics
-python run.py showcase/android/adb_basics/adb_basics -- --screenshot data/android_screen.png
-python run.py showcase/android/adb_basics/adb_basics -- --tap-ratio 0.5 0.5
-python run.py showcase/android/adb_basics/adb_basics -- --key KEYCODE_HOME
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --devices
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --diagnostics
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --screenshot data/android_screen.png
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --tap-ratio 0.5 0.5
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --key KEYCODE_HOME
 ```
 
 Use `--serial <device>` when multiple devices are connected.
@@ -57,6 +57,6 @@ Xiaohongshu note through ADB and stops before the final publish button unless
 `--confirm-post` 才会点击发布。
 
 ```bash
-python run.py showcase/android/xhs_note/xhs_note -- --print-example-profile
-python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/mobile/android/xhs_note/xhs_note -- --print-example-profile
+python run.py showcase/mobile/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
 ```

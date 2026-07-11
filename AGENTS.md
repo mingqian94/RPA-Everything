@@ -95,8 +95,8 @@ python run.py showcase/web/extract_table -- --url https://example.com
 python run.py showcase/web/xhs/search_posts -- --keyword "露营" --output data/xhs_search.json
 python run.py showcase/web/xhs/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
 python run.py showcase/app/post_circle/post_circle -- --text "内容"
-python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
-python run.py showcase/ios/iphone_assist/iphone_assist -- --copy-text "内容" --launch-wechat
+python run.py showcase/mobile/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --copy-text "内容" --launch-wechat
 python run.py skills/my_skill
 ```
 
@@ -131,7 +131,7 @@ python run.py harness/runs -- --limit 20
 python evals/run.py
 
 # Android 真机 smoke test（默认不注入输入）
-python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+python run.py showcase/mobile/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
 
 # 提供 SOP 文档，执行后截图验证结果是否符合规范
 python run.py harness/agent -- --goal "..." --sop sops/feishu/post_circle.md
@@ -173,8 +173,8 @@ python run.py
 | Python 依赖已安装 | `pip install -r requirements.txt` |
 | config.yaml 已配置 | 至少填写 `llm.api_key` |
 | 新用户环境体检 | `python run.py harness/doctor` |
-| Android ADB 已配置（Android 手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
-| iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/ios/iphone_assist/iphone_assist -- --devices` |
+| Android ADB 已配置（Android 手机类任务） | `python run.py showcase/mobile/android/adb_basics/adb_basics -- --devices` |
+| iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --devices` |
 | macOS 屏幕录制权限 | 系统设置 → 隐私与安全性 → 屏幕录制 → 授权终端 |
 
 **启动 Chrome（浏览器类工具的前提）：**

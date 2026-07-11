@@ -45,27 +45,32 @@
 
 详见 [CONTRIBUTING.md](../CONTRIBUTING.md)。
 
-## Android
+## Mobile
 
-Android skills drive a connected Android device through ADB. This is the
-"PC operates phone" route, separate from browser and desktop automation.
+Mobile is the phone-automation target. Its implementation is then split by
+operating system: Android uses ADB, while iOS currently supports preparation
+and evidence capture only.
 
-Android Skill 通过 ADB 操作已连接的 Android 设备，对应“电脑操作手机”的路线，和浏览器、桌面自动化是并列的框架能力。
+Mobile 是“电脑操作手机”的自动化对象；再按操作系统拆分：Android 走 ADB，iOS 当前只提供准备和留证能力。
+
+### Android
 
 | Skill | Description | Needs LLM | Command |
 |---|---|---|---|
-| `android/adb_basics` | List devices, screenshot, tap/swipe by ratio, send key events, push files, diagnostics | No | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
-| `android/xhs_note` | Draft a Xiaohongshu note slowly through ADB; stops before final publish unless explicitly confirmed | No | `python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run` |
+| `mobile/android/adb_basics` | List devices, screenshot, tap/swipe by ratio, send key events, push files, diagnostics | No | `python run.py showcase/mobile/android/adb_basics/adb_basics -- --devices` |
+| `mobile/android/xhs_note` | Draft a Xiaohongshu note slowly through ADB; stops before final publish unless explicitly confirmed | No | `python run.py showcase/mobile/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run` |
 
 | Skill | 说明 | 需要 LLM | 运行命令 |
 |---|---|---|---|
-| `android/adb_basics` | 设备列表、截图、按比例点击/滑动、发送按键、推送文件、基础诊断 | 否 | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
-| `android/xhs_note` | 通过 ADB 慢节奏起草小红书笔记；默认停在最终发布前，除非显式确认 | 否 | `python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run` |
+| `mobile/android/adb_basics` | 设备列表、截图、按比例点击/滑动、发送按键、推送文件、基础诊断 | 否 | `python run.py showcase/mobile/android/adb_basics/adb_basics -- --devices` |
+| `mobile/android/xhs_note` | 通过 ADB 慢节奏起草小红书笔记；默认停在最终发布前，除非显式确认 | 否 | `python run.py showcase/mobile/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run` |
 
-## iOS
+### iOS
 
-iOS is a peer target with browser, desktop, Android, and office workflows. The current iPhone path prepares the device, copies text, launches an app, and captures evidence; final in-app actions remain manual.
+iOS is the other mobile platform. The current iPhone path prepares the device, copies text, launches an app, and captures evidence; final in-app actions remain manual.
+
+iOS 是 Mobile 下的另一操作系统。当前 iPhone 路径负责设备准备、复制文本、打开 App 和截图留证；App 内的最终操作仍由人工完成。
 
 | Skill | Description | Needs LLM | Command |
 |---|---|---|---|
-| `ios/iphone_assist` | Discover an iPhone, check readiness, copy text, launch an app, and capture evidence | No | `python run.py showcase/ios/iphone_assist/iphone_assist -- --devices` |
+| `mobile/ios/iphone_assist` | Discover an iPhone, check readiness, copy text, launch an app, and capture evidence | No | `python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --devices` |

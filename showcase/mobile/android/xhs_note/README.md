@@ -22,7 +22,7 @@ Android showcase for drafting a Xiaohongshu note through ADB.
 先生成示例 profile：
 
 ```bash
-python run.py showcase/android/xhs_note/xhs_note -- --print-example-profile
+python run.py showcase/mobile/android/xhs_note/xhs_note -- --print-example-profile
 ```
 
 把输出保存成 `data/xhs_profile.json` 后，按你手机上的实际 UI 调整各坐标：
@@ -45,7 +45,7 @@ python run.py showcase/android/xhs_note/xhs_note -- --print-example-profile
 默认不点最终发布：
 
 ```bash
-python run.py showcase/android/xhs_note/xhs_note -- \
+python run.py showcase/mobile/android/xhs_note/xhs_note -- \
   --profile data/xhs_profile.json \
   --caption "今天的记录\n慢慢来，不要太快" \
   --media data/demo.jpg
@@ -54,7 +54,7 @@ python run.py showcase/android/xhs_note/xhs_note -- \
 确认要真实发布时才加：
 
 ```bash
-python run.py showcase/android/xhs_note/xhs_note -- \
+python run.py showcase/mobile/android/xhs_note/xhs_note -- \
   --profile data/xhs_profile.json \
   --caption "今天的记录" \
   --media data/demo.jpg \

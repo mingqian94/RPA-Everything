@@ -27,13 +27,13 @@ It demonstrates:
 ## Examples / 示例
 
 ```bash
-python run.py showcase/android/adb_basics/adb_basics -- --devices
-python run.py showcase/android/adb_basics/adb_basics -- --diagnostics
-python run.py showcase/android/adb_basics/adb_basics -- --screenshot data/android_screen.png
-python run.py showcase/android/adb_basics/adb_basics -- --tap-ratio 0.5 0.5
-python run.py showcase/android/adb_basics/adb_basics -- --swipe-ratio 0.5 0.8 0.5 0.2
-python run.py showcase/android/adb_basics/adb_basics -- --key KEYCODE_BACK
-python run.py showcase/android/adb_basics/adb_basics -- --push local.png /sdcard/Pictures/local.png --media-scan
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --devices
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --diagnostics
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --screenshot data/android_screen.png
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --tap-ratio 0.5 0.5
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --swipe-ratio 0.5 0.8 0.5 0.2
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --key KEYCODE_BACK
+python run.py showcase/mobile/android/adb_basics/adb_basics -- --push local.png /sdcard/Pictures/local.png --media-scan
 ```
 
 `--diagnostics-input` is opt-in because it sends `KEYCODE_HOME` to the phone.

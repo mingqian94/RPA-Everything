@@ -7,13 +7,13 @@ Show a real Android device being prepared for a Xiaohongshu draft at a human-lik
 ## Prepare
 
 1. Connect a test Android phone with USB debugging enabled.
-2. Run `python run.py showcase/android/adb_basics/adb_basics -- --diagnostics`.
+2. Run `python run.py showcase/mobile/android/adb_basics/adb_basics -- --diagnostics`.
 3. Prepare a non-sensitive `data/xhs_profile.json` and test media.
 
 ## Record
 
 ```bash
-python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/mobile/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
 ```
 
 For a supervised live draft, omit `--dry-run` but do not pass `--confirm-post`.

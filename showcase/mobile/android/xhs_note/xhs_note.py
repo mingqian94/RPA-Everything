@@ -98,7 +98,7 @@ def main() -> None:
     profile = _load_profile(args.profile)
     coords = profile["coords"]
 
-    log = SkillLogger("android/xhs_note")
+    log = SkillLogger("mobile/android/xhs_note")
     planned = [
         "ensure device online",
         "optionally launch Xiaohongshu",

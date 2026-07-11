@@ -3,7 +3,7 @@
 Non-destructive real-device checks for the Android automation stack.
 
 ```bash
-python run.py showcase/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
+python run.py showcase/mobile/android/smoke_test/smoke_test -- --output data/outputs/android_smoke.json
 ```
 
 Checks:

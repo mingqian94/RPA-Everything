@@ -4,9 +4,9 @@ Reusable iPhone helper for workflows where a Harness Agent can prepare the phone
 but a human must finish the final UI steps.
 
 ```bash
-python run.py showcase/ios/iphone_assist/iphone_assist -- --devices
-python run.py showcase/ios/iphone_assist/iphone_assist -- --diagnostics
-python run.py showcase/ios/iphone_assist/iphone_assist -- --copy-text "Draft text" --launch-wechat
+python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --devices
+python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --diagnostics
+python run.py showcase/mobile/ios/iphone_assist/iphone_assist -- --copy-text "Draft text" --launch-wechat
 ```
 
 Current boundary:
