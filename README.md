@@ -15,6 +15,8 @@ An AI-powered automation framework for everyone who works with repetitive comput
 
 > **Need evidence before adopting it?** Read the [Capability Proof](docs/CAPABILITY-PROOF.md): verified paths, safety boundaries, and repeatable demo scripts.
 
+> **Want to follow the project direction?** See the prioritized [Backlog](docs/BACKLOG.md).
+
 ---
 
 ## Fastest Path For Non-Developers
