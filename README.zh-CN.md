@@ -361,6 +361,12 @@ python run.py harness/agent -- --goal "提取这个网页里的表格数据" --e
 python run.py harness/agent -- --goal "提取这个网页里的表格数据" --trace-json data/outputs/trace.json
 python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
 
+# 将轨迹固化成可监督首跑的 Skill，并查看生成的 manifest 风险清单
+python run.py harness/solidify -- --trace data/outputs/trace.json --output skills/my_task_daily.py
+
+# 查询最近运行记录
+python run.py harness/runs -- --limit 20
+
 # 可选：运行 Harness 静态评估集
 python evals/run.py
 

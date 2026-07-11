@@ -38,7 +38,7 @@ python /path/to/rpa-everything/mcp_server.py
 }
 ```
 
-**连接后可用工具（31 个）：**
+**连接后可用工具（33 个）：**
 
 | 工具 | 说明 |
 |---|---|
@@ -72,6 +72,8 @@ python /path/to/rpa-everything/mcp_server.py
 | `skill_run` | 运行已保存的 Skill |
 | `skill_save` | 将代码保存为新 Skill |
 | `orchestrate` | 接受自然语言目标，Harness 自动规划并执行；支持 `dry_run`、`export` 导出骨架脚本、`export_trace` 导出真实工具调用初稿脚本、`sop` 执行后截图验证 |
+| `skill_solidify` | 将 trace JSON 固化为可监督首跑的 Skill，并给出语法检查和风险 review 清单 |
+| `run_list` | 查询最近 Skill 运行记录或单次运行详情 |
 
 ---
 
@@ -117,6 +119,12 @@ python run.py harness/agent -- --goal "..." --trace-json data/outputs/trace.json
 # dry-run 回放 trace，确认会执行哪些工具调用
 python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
 
+# 将轨迹固化为可监督首跑的 Skill；先查看 manifest，再决定是否定时运行
+python run.py harness/solidify -- --trace data/outputs/trace.json --output skills/my_new_skill.py
+
+# 查看最近任务运行；Agent 也可以通过 run_list 查询
+python run.py harness/runs -- --limit 20
+
 # 运行 Harness 静态评估集
 python evals/run.py
 
@@ -145,6 +153,7 @@ python run.py
 - 探索模式会让 LLM 操作浏览器、桌面或 Android，必须警惕网页/应用内容里的 Prompt Injection。
 - 发布、发送、审批、付款、删除、修改远端数据等真实外部副作用必须显式使用 `--confirm-external`。
 - 密钥、账号、客户数据、Cookie、Token、私有 URL 不得写入 Skill、测试、文档或截图。
+- Secret 引用使用 `${secret:name}`，并在本机环境变量中设置 `RPA_SECRET_NAME`；日志和 trace 会对常见密钥、Token、手机号和邮箱脱敏。
 - 分享 `logs/`、`data/outputs/` 前先检查是否包含页面文本、URL、截图或个人数据。
 
 ---

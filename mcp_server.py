@@ -21,6 +21,7 @@ Claude Desktop 配置（~/.claude/claude_desktop_config.json）：
 """
 
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -120,6 +121,30 @@ _MCP_ONLY_TOOLS = [
                 "confirm_external": {"type": "boolean", "description": "允许执行可能产生真实外部副作用的发布/审批/发送类任务"},
             },
             "required": ["goal"],
+        },
+    },
+    {
+        "name": "skill_solidify",
+        "description": "将 Harness 导出的 trace JSON 固化为可监督首跑的 Skill，并返回语法检查和风险 review 清单。不会执行生成的 Skill。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "trace": {"type": "string", "description": "harness/agent --trace-json 导出的 JSON 路径"},
+                "output": {"type": "string", "description": "输出 Skill 路径，例如 skills/my_workflow.py"},
+            },
+            "required": ["trace", "output"],
+        },
+    },
+    {
+        "name": "run_list",
+        "description": "查询最近的 Skill 运行记录；用于查看失败、待人工确认和最近成功的任务。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "skill": {"type": "string", "description": "可选：按 Skill 名称过滤"},
+                "limit": {"type": "integer", "description": "最多返回多少条，默认 20"},
+                "show": {"type": "string", "description": "可选：传入上一轮返回的 id，读取该运行详情"},
+            },
         },
     },
 ]
@@ -232,12 +257,35 @@ async def _handle_orchestrate(arguments: dict):
     return _text((result.stdout + result.stderr).strip() or "执行完成")
 
 
+async def _handle_skill_solidify(arguments: dict):
+    from harness.solidify import solidify_trace
+
+    result = await asyncio.to_thread(solidify_trace, arguments["trace"], arguments["output"])
+    return _text(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+async def _handle_run_list(arguments: dict):
+    from harness.runs import get_run, list_runs
+
+    if arguments.get("show"):
+        result = await asyncio.to_thread(get_run, arguments["show"])
+    else:
+        result = await asyncio.to_thread(
+            list_runs,
+            skill=arguments.get("skill", ""),
+            limit=max(1, int(arguments.get("limit", 20))),
+        )
+    return _text(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 _HANDLERS = {
     "desktop_find_click": _handle_desktop_find_click,
     "skill_list": _handle_skill_list,
     "skill_run": _handle_skill_run,
     "skill_save": _handle_skill_save,
     "orchestrate": _handle_orchestrate,
+    "skill_solidify": _handle_skill_solidify,
+    "run_list": _handle_run_list,
 }
 
 

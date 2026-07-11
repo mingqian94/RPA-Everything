@@ -60,6 +60,13 @@ Generated Skills are plain Python scripts and should be reviewed like any other 
 - Add explicit arguments for user-provided data.
 - Prefer writing results to `data/outputs/<skill>/<timestamp>/` or a user-provided `--output` path.
 - `--export` also creates a neighboring `<skill>.README.md` with its goal, run command, review checklist, and any detected external-action guard.
+- Trace-derived Skills from `harness/solidify` must run once under supervision. A syntax check or `ready_for_supervised_run` manifest is not approval to schedule an external action.
+
+## Local Secret References
+
+- Store reusable local secrets in environment variables such as `RPA_SECRET_CRM_PASSWORD`, not in source files or trace JSON.
+- A config value can reference one with `${secret:crm-password}`. The reference is expanded only on the local machine at runtime.
+- Structured logs and Harness trace exports redact common secret fields, bearer tokens, query-string credentials, phone numbers, and email addresses. Treat this as a guardrail, not a substitute for reviewing files before sharing.
 
 ## Pre-Commit Checks
 

@@ -57,3 +57,8 @@ def test_orchestrate_exposes_export_trace():
 def test_orchestrate_exposes_trace_json():
     orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
     assert "trace_json" in orchestrate["input_schema"]["properties"]
+
+
+def test_mcp_exposes_solidify_and_run_center():
+    names = {tool["name"] for tool in mcp_server._MCP_ONLY_TOOLS}
+    assert {"skill_solidify", "run_list"} <= names

@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core import notify
+from core.redact import redact, redact_text
 
 _LOG_DIR = Path(__file__).parent.parent / "logs"
 
@@ -51,10 +52,15 @@ class SkillLogger:
         self._file = _LOG_DIR / f"{skill_name.replace('/', '_')}_{self.started_at.strftime('%Y%m%d_%H%M%S')}.json"
 
     def step(self, name: str, status: str = "ok", detail: str = ""):
-        entry = {"step": name, "status": status, "detail": detail, "time": datetime.now().isoformat()}
+        entry = {
+            "step": redact_text(name),
+            "status": status,
+            "detail": redact_text(detail),
+            "time": datetime.now().isoformat(),
+        }
         self.steps.append(entry)
         level = logging.INFO if status == "ok" else logging.WARNING
-        logger.log(level, f"[{self.skill_name}] {name} → {status} {detail}")
+        logger.log(level, f"[{self.skill_name}] {entry['step']} → {status} {entry['detail']}")
 
     def finish(self, result=None):
         record = {
@@ -62,13 +68,13 @@ class SkillLogger:
             "started_at": self.started_at.isoformat(),
             "finished_at": datetime.now().isoformat(),
             "steps": self.steps,
-            "result": result,
+            "result": redact(result),
         }
         self._file.write_text(json.dumps(record, ensure_ascii=False, indent=2))
         logger.info(f"[{self.skill_name}] 完成，日志：{self._file}")
 
         # 如果 result 包含失败信息，自动发送通知
-        self._maybe_notify(result)
+        self._maybe_notify(record["result"])
 
         return record
 
@@ -96,9 +102,10 @@ class SkillLogger:
 
     def error(self, msg: str) -> None:
         """记录错误日志，打印到 stderr 并发送通知。"""
-        print(f"[{self.skill_name}] ERROR: {msg}", file=sys.stderr)
+        safe_msg = redact_text(msg)
+        print(f"[{self.skill_name}] ERROR: {safe_msg}", file=sys.stderr)
         notify.send(
             title=f"Skill 错误：{self.skill_name}",
-            body=msg,
+            body=safe_msg,
             level="error",
         )

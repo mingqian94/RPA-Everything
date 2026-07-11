@@ -65,6 +65,18 @@ python run.py harness/agent -- --goal "按我描述的步骤探索并导出 Skil
 python run.py skills/my_workflow
 ```
 
+如果已导出一份真实执行轨迹 JSON，可以让 Agent 或 CLI 进一步固化：
+
+```bash
+python run.py harness/solidify -- --trace data/outputs/trace.json --output skills/my_workflow.py
+```
+
+它会生成同名 `.manifest.json`。只有 `ready_for_supervised_run` 才表示可以在人工看护下首跑；这不等于可以直接定时运行或执行最终外部操作。
+
+## 本地账号和数据
+
+不要把密码、Token、Cookie 或客户数据写进 Skill。复用密钥时，在本机环境变量设置 `RPA_SECRET_CRM_PASSWORD`，并在配置中引用 `${secret:crm-password}`。日志和 trace 会对常见敏感字段、手机号和邮箱脱敏，但分享前仍需人工检查。
+
 ## 有真实外部操作时
 
 发消息、发布内容、审批、付款、删除或修改远端数据，必须在最后一步前停下。按 [外部操作确认单](docs/external-action-confirmation.zh-CN.md) 明确目标和范围，再显式使用 `--confirm-external`。这不是跳过人工审核，而是记录人工审核已经完成。

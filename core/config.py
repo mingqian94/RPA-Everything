@@ -2,6 +2,8 @@ import os
 import yaml
 from pathlib import Path
 
+from core.secrets import expand_secret_references
+
 _ROOT = Path(__file__).parent.parent
 _CONFIG_FILE = _ROOT / "config.yaml"
 
@@ -33,4 +35,4 @@ def get(key: str, default=None):
     if val is None:  # 未配置或 yaml 里留空
         env = os.environ.get(key.upper().replace(".", "_"))
         return env if env is not None else default
-    return val
+    return expand_secret_references(val)

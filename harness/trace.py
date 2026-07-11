@@ -7,14 +7,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+from core.redact import redact
+
 
 def export_trace_json(goal: str, results: list[dict], output_path: str) -> Path:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "version": 1,
-        "goal": goal,
-        "results": results,
+        "goal": redact(goal),
+        "results": redact(results),
     }
     path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     return path

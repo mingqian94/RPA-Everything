@@ -46,3 +46,11 @@ def test_error_status_preserved(logger):
     logger.step("登录", status="error", detail="超时")
     assert logger.steps[0]["status"] == "error"
     assert logger.steps[0]["detail"] == "超时"
+
+
+def test_logger_redacts_persisted_secret(logger):
+    logger.step("request", detail="Bearer abc123")
+    record = logger.finish({"token": "private"})
+
+    assert "abc123" not in record["steps"][0]["detail"]
+    assert record["result"]["token"] == "<redacted>"
