@@ -82,6 +82,13 @@ def test_android_skills_registered():
 
 
 @pytest.mark.unit
+def test_ios_semi_auto_registered():
+    assert harness.SKILL_REGISTRY["ios_semi_auto"]["type"] == "skill"
+    assert harness.SKILL_REGISTRY["ios_semi_auto"]["path"] == "showcase/mobile/iphone_assist/iphone_assist"
+    assert "skill:showcase/mobile/iphone_assist/iphone_assist" in harness.SKILL_REGISTRY
+
+
+@pytest.mark.unit
 def test_run_task_dispatches_android(monkeypatch):
     calls = []
 

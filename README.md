@@ -429,6 +429,18 @@ Browser, desktop, and Android tools share one schema definition with the agentic
 | `android_push_file` | Push a file to the device, optionally trigger media scan |
 | `android_diagnostics` | Check ADB availability, device state, hardware serial, resolution, screenshot, UIAutomator, ADBKeyboard, and optional input/file-push probes |
 
+**iPhone**
+
+| Tool | Description |
+|---|---|
+| `ios_devices` | List iPhones visible to `pymobiledevice3`; WiFi discovery is best-effort |
+| `ios_diagnostics` | Check iPhone semi-automation prerequisites |
+| `ios_copy_text` | Copy text to the iPhone clipboard |
+| `ios_launch_app` | Launch an iPhone app by bundle id, for example `com.tencent.xin` |
+| `ios_screenshot` | Capture an iPhone screenshot for evidence |
+
+The iPhone path is semi-automation: it can prepare the phone, copy text, open an app, and capture evidence. It does not claim remote touch or final publish/approval automation without a separately verified WDA/XCUITest/CoreDevice touch path.
+
 **Skill management**
 
 | Tool | Description |
@@ -483,6 +495,7 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
 | `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
 | `showcase/android/xiaohongshu_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
+| `showcase/mobile/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |

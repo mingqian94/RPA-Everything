@@ -38,7 +38,7 @@ python /path/to/rpa-everything/mcp_server.py
 }
 ```
 
-**连接后可用工具（26 个）：**
+**连接后可用工具（31 个）：**
 
 | 工具 | 说明 |
 |---|---|
@@ -63,6 +63,11 @@ python /path/to/rpa-everything/mcp_server.py
 | `android_type` | 输入文字；`unicode=true` 使用 ADBKeyboard |
 | `android_push_file` | 推送文件到设备，可选触发媒体扫描 |
 | `android_diagnostics` | 检查 ADB、设备状态、分辨率和截图权限 |
+| `ios_devices` | 列出 pymobiledevice3 可识别的 iPhone |
+| `ios_diagnostics` | 检查 iPhone 半自动前置条件 |
+| `ios_copy_text` | 复制文本到 iPhone 剪贴板 |
+| `ios_launch_app` | 按 bundle id 打开 iPhone App |
+| `ios_screenshot` | 截取 iPhone 屏幕留证 |
 | `skill_list` | 列出所有可用 Skill |
 | `skill_run` | 运行已保存的 Skill |
 | `skill_save` | 将代码保存为新 Skill |
@@ -82,6 +87,7 @@ python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营" --outp
 python run.py showcase/web/xiaohongshu/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
 python run.py showcase/app/post_circle/post_circle -- --text "内容"
 python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/mobile/iphone_assist/iphone_assist -- --copy-text "内容" --launch-wechat
 python run.py skills/my_skill
 ```
 
@@ -147,7 +153,8 @@ python run.py
 | Chrome 以调试端口启动 | `curl -s http://localhost:9222/json` 有返回 |
 | Python 依赖已安装 | `pip install -r requirements.txt` |
 | config.yaml 已配置 | 至少填写 `llm.api_key` |
-| Android ADB 已配置（手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
+| Android ADB 已配置（Android 手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
+| iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/mobile/iphone_assist/iphone_assist -- --devices` |
 | macOS 屏幕录制权限 | 系统设置 → 隐私与安全性 → 屏幕录制 → 授权终端 |
 
 **启动 Chrome（浏览器类工具的前提）：**
@@ -161,6 +168,6 @@ tools\start_chrome.bat     # Windows
 
 ## 判断建议
 
-- 支持 MCP → 选路径一，可完整使用探索 + 执行全部能力
+- 支持 MCP → 选路径一，可完整使用探索 + 执行全部能力；iPhone 当前是半自动准备/留证，不是远程触控
 - 只能执行 shell 命令 → 选路径二，执行固化 Skill 或通过 Harness 完成有限探索
 - 两者都支持 → 路径一优先，路径二作为补充

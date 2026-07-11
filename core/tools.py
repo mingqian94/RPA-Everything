@@ -285,6 +285,63 @@ ANDROID_TOOLS = [
     },
 ]
 
+IOS_TOOLS = [
+    {
+        "name": "ios_devices",
+        "description": "List iPhones visible to pymobiledevice3. USB is reliable; WiFi discovery is best-effort.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "include_wifi": {"type": "boolean", "default": False},
+            },
+        },
+    },
+    {
+        "name": "ios_diagnostics",
+        "description": "Run iPhone semi-automation diagnostics. Clipboard check is opt-in because it writes to the phone clipboard.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "udid": {"type": "string"},
+                "include_clipboard_check": {"type": "boolean", "default": False},
+            },
+        },
+    },
+    {
+        "name": "ios_copy_text",
+        "description": "Copy text to an iPhone clipboard through CoreDevice. This is semi-automation, not remote touch control.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "udid": {"type": "string"},
+                "text": {"type": "string"},
+            },
+            "required": ["text"],
+        },
+    },
+    {
+        "name": "ios_launch_app",
+        "description": "Launch an iPhone app by bundle id through CoreDevice, for example com.tencent.xin for WeChat.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "udid": {"type": "string"},
+                "bundle_id": {"type": "string", "default": "com.tencent.xin"},
+            },
+        },
+    },
+    {
+        "name": "ios_screenshot",
+        "description": "Capture an iPhone screenshot through CoreDevice and return it as an image.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "udid": {"type": "string"},
+            },
+        },
+    },
+]
+
 
 def _img_content(path: str) -> list[dict]:
     data = base64.standard_b64encode(Path(path).read_bytes()).decode()
@@ -438,6 +495,45 @@ def execute_android_tool(name: str, args: dict) -> list[dict]:
         return [{"type": "text", "text": _json.dumps(results, ensure_ascii=False, indent=2)}]
 
     return [{"type": "text", "text": f"Unknown Android tool: {name}"}]
+
+
+def execute_ios_tool(name: str, args: dict) -> list[dict]:
+    import json as _json
+    import tempfile as _tempfile
+    from core.ios import IosDevice, list_devices, run_diagnostics
+
+    if name == "ios_devices":
+        devices = [d.__dict__ for d in list_devices(include_wifi=bool(args.get("include_wifi", False)))]
+        return [{"type": "text", "text": _json.dumps(devices, ensure_ascii=False, indent=2)}]
+
+    if name == "ios_diagnostics":
+        results = [r.__dict__ for r in run_diagnostics(
+            udid=args.get("udid") or None,
+            include_clipboard_check=bool(args.get("include_clipboard_check", False)),
+        )]
+        return [{"type": "text", "text": _json.dumps(results, ensure_ascii=False, indent=2)}]
+
+    if name == "ios_copy_text":
+        dev = IosDevice(udid=args.get("udid") or None)
+        dev.ensure_developer_ready()
+        dev.copy_text(args["text"])
+        return [{"type": "text", "text": "Copied text to iPhone clipboard. Manual confirmation is still required."}]
+
+    if name == "ios_launch_app":
+        bundle_id = args.get("bundle_id") or "com.tencent.xin"
+        dev = IosDevice(udid=args.get("udid") or None)
+        dev.ensure_developer_ready()
+        dev.launch_app(bundle_id)
+        return [{"type": "text", "text": f"Launched iPhone app: {bundle_id}. Manual confirmation is still required."}]
+
+    if name == "ios_screenshot":
+        dev = IosDevice(udid=args.get("udid") or None)
+        tmp = _tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        dev.ensure_developer_ready()
+        dev.screenshot_to(tmp.name)
+        return _img_content(tmp.name)
+
+    return [{"type": "text", "text": f"Unknown iOS tool: {name}"}]
 
 
 def execute_desktop_tool(name: str, args: dict) -> list[dict]:

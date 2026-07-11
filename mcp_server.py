@@ -36,9 +36,11 @@ from core.tools import (
     ANDROID_TOOLS,
     BROWSER_TOOLS,
     DESKTOP_TOOLS,
+    IOS_TOOLS,
     execute_android_tool,
     execute_browser_tool,
     execute_desktop_tool,
+    execute_ios_tool,
 )
 
 server = Server("rpa-everything")
@@ -47,9 +49,11 @@ server = Server("rpa-everything")
 _SHARED_BROWSER = [t for t in BROWSER_TOOLS if t["name"] != "task_complete"]
 _SHARED_DESKTOP = [t for t in DESKTOP_TOOLS if t["name"] != "task_complete"]
 _SHARED_ANDROID = [t for t in ANDROID_TOOLS if t["name"] != "task_complete"]
+_SHARED_IOS = [t for t in IOS_TOOLS if t["name"] != "task_complete"]
 _BROWSER_NAMES = {t["name"] for t in _SHARED_BROWSER}
 _DESKTOP_NAMES = {t["name"] for t in _SHARED_DESKTOP}
 _ANDROID_NAMES = {t["name"] for t in _SHARED_ANDROID}
+_IOS_NAMES = {t["name"] for t in _SHARED_IOS}
 
 # ── MCP 特有工具（Claude schema 格式，与 core/tools.py 保持一致的写法）──────────
 
@@ -120,7 +124,7 @@ _MCP_ONLY_TOOLS = [
     },
 ]
 
-ALL_TOOLS = _SHARED_BROWSER + _SHARED_DESKTOP + _SHARED_ANDROID + _MCP_ONLY_TOOLS
+ALL_TOOLS = _SHARED_BROWSER + _SHARED_DESKTOP + _SHARED_ANDROID + _SHARED_IOS + _MCP_ONLY_TOOLS
 
 
 def _to_mcp_tool(schema: dict) -> types.Tool:
@@ -254,6 +258,10 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent | type
 
         if name in _ANDROID_NAMES:
             content = await asyncio.to_thread(execute_android_tool, name, arguments)
+            return _to_mcp_content(content)
+
+        if name in _IOS_NAMES:
+            content = await asyncio.to_thread(execute_ios_tool, name, arguments)
             return _to_mcp_content(content)
 
         handler = _HANDLERS.get(name)

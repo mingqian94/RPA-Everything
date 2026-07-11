@@ -60,6 +60,17 @@ BUILTIN_CAPABILITIES: dict[str, dict] = {
             "include_file_check 会写入并删除一个探针文件，只有要验证素材/文件推送链路时再打开"
         ),
     },
+    "ios_semi_auto": {
+        "type": "skill",
+        "side_effect_level": "external_draft",
+        "path": "showcase/mobile/iphone_assist/iphone_assist",
+        "description": "iPhone 半自动辅助：识别设备、检查开发者模式、复制文案、打开 App、截图留证；不远程触控、不自动发布",
+        "hint": (
+            "iPhone 当前不是 Android ADB 那种全自动控制；优先规划为运行 "
+            "showcase/mobile/iphone_assist/iphone_assist。"
+            "复制文案和打开微信后状态应写为待人工确认。"
+        ),
+    },
     "feishu_post": {
         "type": "desktop",
         "side_effect_level": "external_commit",
@@ -160,6 +171,8 @@ def _argparse_schema(skill_path: str) -> list[dict]:
 def _infer_side_effect_level(skill_path: str) -> str:
     lowered = skill_path.lower()
     if "xiaohongshu_note" in lowered:
+        return "external_draft"
+    if "iphone_assist" in lowered:
         return "external_draft"
     if any(word in lowered for word in ["extract", "crawler", "crawl", "search", "detail", "user_posts", "post_detail"]):
         return "none"
