@@ -13,7 +13,7 @@ Show a real Android device being prepared for a Xiaohongshu draft at a human-lik
 ## Record
 
 ```bash
-python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
 ```
 
 For a supervised live draft, omit `--dry-run` but do not pass `--confirm-post`.

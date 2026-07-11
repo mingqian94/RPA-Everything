@@ -24,7 +24,7 @@ tools\start_chrome.bat
 ### 1. Crawl User Posts / 采集用户帖子
 
 ```bash
-python run.py showcase/web/xiaohongshu/user_posts -- \
+python run.py showcase/web/xhs/user_posts -- \
   --user-url "https://www.xiaohongshu.com/user/profile/<user-id>" \
   --limit 30 \
   --output data/xhs_user_posts.json
@@ -35,7 +35,7 @@ python run.py showcase/web/xiaohongshu/user_posts -- \
 ### 2. Crawl Search or Tag Posts / 采集搜索词或 Tag 帖子
 
 ```bash
-python run.py showcase/web/xiaohongshu/search_posts -- \
+python run.py showcase/web/xhs/search_posts -- \
   --keyword "露营" \
   --limit 30 \
   --output data/xhs_search_posts.json
@@ -46,7 +46,7 @@ Tag 可直接作为关键词传入，例如 `--keyword "#露营装备"`。
 ### 3. Crawl Post Detail / 采集帖子详情
 
 ```bash
-python run.py showcase/web/xiaohongshu/post_detail -- \
+python run.py showcase/web/xhs/post_detail -- \
   --url "https://www.xiaohongshu.com/explore/<note-id>" \
   --output data/xhs_post_detail.json
 ```

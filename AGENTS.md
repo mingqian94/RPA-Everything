@@ -92,11 +92,11 @@ python run.py harness/doctor
 python run.py harness/runtime --json
 
 python run.py showcase/web/extract_table -- --url https://example.com
-python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营" --output data/xhs_search.json
-python run.py showcase/web/xiaohongshu/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
+python run.py showcase/web/xhs/search_posts -- --keyword "露营" --output data/xhs_search.json
+python run.py showcase/web/xhs/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
 python run.py showcase/app/post_circle/post_circle -- --text "内容"
-python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
-python run.py showcase/mobile/iphone_assist/iphone_assist -- --copy-text "内容" --launch-wechat
+python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/ios/iphone_assist/iphone_assist -- --copy-text "内容" --launch-wechat
 python run.py skills/my_skill
 ```
 
@@ -174,7 +174,7 @@ python run.py
 | config.yaml 已配置 | 至少填写 `llm.api_key` |
 | 新用户环境体检 | `python run.py harness/doctor` |
 | Android ADB 已配置（Android 手机类任务） | `python run.py showcase/android/adb_basics/adb_basics -- --devices` |
-| iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/mobile/iphone_assist/iphone_assist -- --devices` |
+| iPhone 半自动依赖已配置（iPhone 任务） | `pip install pymobiledevice3` 后运行 `python run.py showcase/ios/iphone_assist/iphone_assist -- --devices` |
 | macOS 屏幕录制权限 | 系统设置 → 隐私与安全性 → 屏幕录制 → 授权终端 |
 
 **启动 Chrome（浏览器类工具的前提）：**

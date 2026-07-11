@@ -57,6 +57,6 @@ Xiaohongshu note through ADB and stops before the final publish button unless
 `--confirm-post` 才会点击发布。
 
 ```bash
-python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --print-example-profile
-python run.py showcase/android/xiaohongshu_note/xiaohongshu_note -- --profile data/xhs_profile.json --dry-run
+python run.py showcase/android/xhs_note/xhs_note -- --print-example-profile
+python run.py showcase/android/xhs_note/xhs_note -- --profile data/xhs_profile.json --dry-run
 ```

@@ -23,9 +23,9 @@ def test_harness_trace_export_is_documented():
 def test_xiaohongshu_showcase_tools_are_documented():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     for skill in (
-        "showcase/web/xiaohongshu/user_posts",
-        "showcase/web/xiaohongshu/search_posts",
-        "showcase/web/xiaohongshu/post_detail",
+        "showcase/web/xhs/user_posts",
+        "showcase/web/xhs/search_posts",
+        "showcase/web/xhs/post_detail",
     ):
         assert skill in readme
 

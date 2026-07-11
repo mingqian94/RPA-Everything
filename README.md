@@ -154,12 +154,14 @@ rpa-everything/
 │   ├── web/
 │   │   ├── extract_table/   # Generic web table extraction (Browser DOM)
 │   │   ├── click_by_vision/ # Vision-based clicking (Browser + LLM Vision)
-│   │   └── xiaohongshu/     # Xiaohongshu user/search/detail crawling showcases
+│   │   └── xhs/             # Xiaohongshu user/search/detail crawling showcases
 │   ├── app/
 │   │   └── template_click/  # Image-template-matching click (minimal desktop example, bring your own template)
 │   ├── android/
 │   │   ├── adb_basics/      # Android ADB basics: devices, screenshots, taps, swipes, push files
-│   │   └── xiaohongshu_note/# Xiaohongshu note draft flow: slow ADB steps, stops before final publish
+│   │   └── xhs_note/        # Xiaohongshu note draft flow: slow ADB steps, stops before final publish
+│   ├── ios/
+│   │   └── iphone_assist/   # iPhone preparation and evidence; final UI steps stay manual
 │   └── office/              # Pure file-format operations — no screen needed, server-friendly
 │       ├── excel_toolkit/   # Excel read/write (openpyxl)
 │       ├── ppt_generator/   # Generate PPT from structured content (python-pptx)
@@ -553,13 +555,13 @@ The MCP Server hands the LLM the ability to *operate your screen and write & run
 |---|---|---|---|
 | `showcase/web/extract_table` | Browser DOM | ✅ Runnable | `--url https://www.w3schools.com/html/html_tables.asp` |
 | `showcase/web/click_by_vision` | Browser + LLM Vision | ✅ Runnable | `model: global.anthropic.claude-sonnet-4-6` in config.yaml |
-| `showcase/web/xiaohongshu/user_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll a user's posts; `--user-url <URL> --output data/xhs_user.json` |
-| `showcase/web/xiaohongshu/search_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll keyword/tag results; `--keyword "camping" --output data/xhs_search.json` |
-| `showcase/web/xiaohongshu/post_detail` | Browser DOM crawl | ✅ Runnable | Extract visible text, images, videos, engagement; `--url <URL>` |
+| `showcase/web/xhs/user_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll a user's posts; `--user-url <URL> --output data/xhs_user.json` |
+| `showcase/web/xhs/search_posts` | Browser DOM crawl | ✅ Runnable | Slow-scroll keyword/tag results; `--keyword "camping" --output data/xhs_search.json` |
+| `showcase/web/xhs/post_detail` | Browser DOM crawl | ✅ Runnable | Extract visible text, images, videos, engagement; `--url <URL>` |
 | `showcase/app/template_click` | Desktop image template matching | ✅ Runnable | Zero AI cost; `--template assets/<system>/<button>.png` (capture your own template) |
 | `showcase/android/adb_basics` | Android ADB operations | ✅ Runnable | Needs Android platform-tools / ADB; `--devices`, `--diagnostics`, `--tap-ratio 0.5 0.5` |
-| `showcase/android/xiaohongshu_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
-| `showcase/mobile/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |
+| `showcase/android/xhs_note` | Android ADB app flow | ✅ Runnable | Drafts a Xiaohongshu note slowly; default stops before final publish; `--profile data/xhs_profile.json --dry-run` |
+| `showcase/ios/iphone_assist` | iPhone semi-automation | ✅ Runnable | Optional `pymobiledevice3`; copy text, launch app, screenshot evidence, final steps require manual confirmation |
 | `showcase/office/excel_toolkit` | File-format ops (openpyxl) | ✅ Runnable | Zero AI cost, server-friendly; `--read data.xlsx` |
 | `showcase/office/ppt_generator` | File-format ops (python-pptx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.pptx --data '[...]'` |
 | `showcase/office/word_report` | File-format ops (python-docx) | ✅ Runnable | Zero AI cost, server-friendly; `--output out.docx --title "Title" --data '[...]'` |

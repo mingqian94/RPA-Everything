@@ -1,6 +1,6 @@
 import pytest
 
-from showcase.web.xiaohongshu import _common
+from showcase.web.xhs import _common
 
 
 class FakePage:
@@ -12,7 +12,7 @@ class FakePage:
 
 
 @pytest.mark.unit
-def test_xiaohongshu_login_required_detects_search_gate():
+def test_xhs_login_required_detects_search_gate():
     page = FakePage("登录后查看搜索结果\n手机号登录\n获取验证码")
 
     import asyncio
@@ -21,7 +21,7 @@ def test_xiaohongshu_login_required_detects_search_gate():
 
 
 @pytest.mark.unit
-def test_xiaohongshu_login_required_allows_content():
+def test_xhs_login_required_allows_content():
     page = FakePage("露营攻略 收藏 评论")
 
     import asyncio
