@@ -130,6 +130,9 @@ def test_export_plan_includes_android_template(tmp_path):
     assert "dev = AndroidDevice()" in text
     assert "tap_ratio" in text
     assert "待确认" in text
+    guide = tmp_path / "android_flow.README.md"
+    assert guide.exists()
+    assert "操作手机" in guide.read_text(encoding="utf-8")
 
 
 @pytest.mark.unit

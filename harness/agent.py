@@ -404,6 +404,51 @@ async def _verify_and_confirm(sop: str, tasks: list[dict]) -> bool:
 
 # ── 固化导出 ──────────────────────────────────────────────────────────────────
 
+def _export_skill_readme(goal: str, tasks: list[dict], path: Path) -> Path:
+    """Write a review guide beside generated code without copying secrets."""
+    readme_path = path.with_name(f"{path.stem}.README.md")
+    risky_tasks = []
+    for task in tasks:
+        spec = SKILL_REGISTRY.get(task.get("skill", ""), {})
+        if spec.get("side_effect_level") in {"external_draft", "external_commit", "unknown"}:
+            risky_tasks.append(task.get("label") or task.get("skill") or "unnamed step")
+
+    lines = [
+        f"# {path.stem}",
+        "",
+        "This guide was generated with the Skill skeleton. Review the Python file before running it.",
+        "",
+        "## Goal",
+        "",
+        goal,
+        "",
+        "## Run",
+        "",
+        "```bash",
+        f"python run.py {path.as_posix()}",
+        "```",
+        "",
+        "## Before first run",
+        "",
+        "- Replace every `TODO` with deterministic selectors or local automation code.",
+        "- Put API keys, passwords, cookies, and private URLs in `config.yaml` or environment variables, never in this Skill.",
+        "- Inspect logs or output files before scheduling the Skill.",
+    ]
+    if risky_tasks:
+        lines += ["", "## External-action guard", "", "This plan may prepare or commit an action in another system:"]
+        lines.extend(f"- {label}" for label in risky_tasks)
+        lines += [
+            "",
+            "Keep final publish/send/approve/delete steps separate. Use docs/external-action-confirmation.zh-CN.md before allowing a real action.",
+        ]
+    lines += ["", "## Generated plan", ""]
+    for index, task in enumerate(tasks, 1):
+        lines.append(f"{index}. {task.get('label') or task.get('goal') or task.get('skill', 'unnamed step')}")
+    lines.append("")
+    readme_path.write_text("\n".join(lines), encoding="utf-8")
+    return readme_path
+
+
 def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
     """把规划结果导出为可编辑的骨架 Skill 脚本。"""
     path = Path(output_path)
@@ -499,7 +544,9 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
     ]
 
     path.write_text("\n".join(lines), encoding="utf-8")
+    readme_path = _export_skill_readme(goal, tasks, path)
     print(f"\n📄 骨架脚本已生成：{path}", flush=True)
+    print(f"   使用说明：{readme_path}", flush=True)
     print("   下一步：打开文件，把各步骤的 TODO 替换成确定性代码", flush=True)
 
 

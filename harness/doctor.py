@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import shutil
 import sys
 import urllib.error
 import urllib.request
@@ -141,6 +142,23 @@ def run_checks(include_optional: bool = True) -> list[Check]:
     return checks
 
 
+def apply_safe_fixes(checks: list[Check]) -> list[str]:
+    """Apply deterministic local fixes that never require user secrets."""
+    actions: list[str] = []
+    names = {check.name: check for check in checks}
+    config_check = names.get("config_yaml")
+    config = ROOT / "config.yaml"
+    example = ROOT / "config.yaml.example"
+
+    if config_check and not config_check.ok and not config.exists():
+        if example.exists():
+            shutil.copyfile(example, config)
+            actions.append("Created config.yaml from config.yaml.example. Add llm.api_key before using Harness.")
+        else:
+            actions.append("Could not create config.yaml: config.yaml.example is missing.")
+    return actions
+
+
 def _print_human(checks: list[Check]) -> None:
     required_failed = [c for c in checks if c.required and not c.ok]
     optional_failed = [c for c in checks if not c.required and not c.ok]
@@ -167,12 +185,30 @@ def main():
     parser = argparse.ArgumentParser(description="Check whether RPA-Everything is ready to use.")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
     parser.add_argument("--required-only", action="store_true", help="Skip Android/iPhone optional checks.")
+    parser.add_argument(
+        "--fix",
+        action="store_true",
+        help="Apply safe local fixes only; never fills secrets or executes external actions.",
+    )
     args = parser.parse_args(_argv())
 
     checks = run_checks(include_optional=not args.required_only)
+    actions: list[str] = []
+    if args.fix:
+        actions = apply_safe_fixes(checks)
+        if actions:
+            checks = run_checks(include_optional=not args.required_only)
     if args.json:
-        print(json.dumps([c.__dict__ for c in checks], ensure_ascii=False, indent=2))
+        payload: object = [c.__dict__ for c in checks]
+        if args.fix:
+            payload = {"checks": payload, "fixes": actions}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
+        if actions:
+            print("Applied safe fixes:")
+            for action in actions:
+                print(f"  - {action}")
+            print()
         _print_human(checks)
 
     if any(c.required and not c.ok for c in checks):

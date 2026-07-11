@@ -30,6 +30,8 @@ The Harness marks capabilities with `side_effect_level`:
 
 For commit-like actions, Harness blocks execution unless `--confirm-external` is explicitly passed. Do not bypass this for workflows that publish, send, approve, pay, delete, or change production systems.
 
+Before a real external action, record its exact target, scope, count, success signal, and approving person with the [external-action confirmation template](docs/external-action-confirmation.zh-CN.md). `--confirm-external` records an explicit runtime choice; it does not replace this human review.
+
 ## Browser And Prompt Injection
 
 Untrusted websites can try to influence the LLM through visible or hidden page content. During exploration:
@@ -57,6 +59,7 @@ Generated Skills are plain Python scripts and should be reviewed like any other 
 - Keep secrets out of source files.
 - Add explicit arguments for user-provided data.
 - Prefer writing results to `data/outputs/<skill>/<timestamp>/` or a user-provided `--output` path.
+- `--export` also creates a neighboring `<skill>.README.md` with its goal, run command, review checklist, and any detected external-action guard.
 
 ## Pre-Commit Checks
 

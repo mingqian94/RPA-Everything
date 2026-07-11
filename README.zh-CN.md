@@ -10,6 +10,8 @@
 
 > **AI Agent 接入**：如果你是 Claude Desktop、Codex 等桌面 Agent，请阅读 [AGENTS.md](AGENTS.md) 了解接入方式。
 
+> **第一次使用**：直接看 [中文速上手](QUICKSTART.zh-CN.md)，从安装、体检、描述任务到导出第一个 Skill。
+
 ---
 
 ## 小白最快上手

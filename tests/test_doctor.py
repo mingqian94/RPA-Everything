@@ -1,4 +1,6 @@
 import pytest
+import runpy
+import sys
 
 from harness import doctor
 
@@ -43,6 +45,30 @@ def test_check_config_rejects_template_key(monkeypatch, tmp_path):
 
     assert not result.ok
     assert "template" in result.detail
+
+
+@pytest.mark.unit
+def test_apply_safe_fixes_creates_missing_config(monkeypatch, tmp_path):
+    (tmp_path / "config.yaml.example").write_text("llm:\n  api_key: '<your-anthropic-api-key>'\n", encoding="utf-8")
+    monkeypatch.setattr(doctor, "ROOT", tmp_path)
+
+    actions = doctor.apply_safe_fixes([doctor.check_config()])
+
+    assert (tmp_path / "config.yaml").exists()
+    assert len(actions) == 1
+    assert "Add llm.api_key" in actions[0]
+
+
+@pytest.mark.unit
+def test_run_entrypoint_dispatches_doctor(monkeypatch):
+    called = []
+
+    monkeypatch.setattr(sys, "argv", ["run.py", "harness/doctor", "--required-only"])
+    monkeypatch.setattr(doctor, "main", lambda: called.append(list(sys.argv)))
+    runpy.run_path(str(doctor.ROOT / "run.py"), run_name="__main__")
+
+    assert len(called) == 1
+    assert called[0][1:] == ["--required-only"]
 
 
 @pytest.mark.unit
