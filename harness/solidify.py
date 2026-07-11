@@ -16,6 +16,36 @@ _REVIEW_TOOLS = {"desktop_click", "desktop_type", "desktop_hotkey", "browser_eva
 _SIDE_EFFECT_WORDS = {"publish", "send", "approve", "delete", "pay", "submit"}
 
 
+def _evidence_level(tool: str, args: dict[str, Any]) -> str:
+    """Describe the concrete evidence used by a trace step without overstating reliability."""
+    if tool == "android_tap_element":
+        return "ui_node"
+    if tool in {"browser_click", "browser_type"} and args.get("selector"):
+        return "dom_selector"
+    if tool in {"desktop_click", "android_tap", "android_swipe"}:
+        return "coordinate"
+    if tool.startswith("desktop_"):
+        return "desktop_command"
+    if tool == "browser_evaluate":
+        return "browser_script_review"
+    if tool.startswith("browser_"):
+        return "browser_command"
+    if tool.startswith("android_"):
+        return "android_command"
+    return "command"
+
+
+def summarize_evidence(record: dict[str, Any]) -> dict[str, Any]:
+    steps = []
+    counts: dict[str, int] = {}
+    for _, item in iter_tool_calls(record):
+        tool = item["tool"]
+        level = _evidence_level(tool, item.get("args", {}))
+        counts[level] = counts.get(level, 0) + 1
+        steps.append({"tool": tool, "level": level})
+    return {"counts": counts, "steps": steps}
+
+
 def assess_trace(record: dict[str, Any]) -> dict[str, Any]:
     review_reasons: list[str] = []
     tool_count = 0
@@ -53,6 +83,7 @@ def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
         "skill": str(output),
         "dry_run_steps": dry_run,
         "syntax_checked": True,
+        "evidence": summarize_evidence(record),
         **assessment,
         "next_step": "Run once under supervision and review evidence before scheduling.",
     }

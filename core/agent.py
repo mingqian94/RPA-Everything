@@ -24,22 +24,34 @@ from core.tools import (
     execute_desktop_tool,
 )
 
-async def _pause_if_login_required(page) -> None:
-    """导航后检测是否跳到了登录页，若是则暂停等用户手动登录。"""
+async def _pause_if_login_required(page, handoff_on_login: bool = False) -> dict | None:
+    """Pause for local login or return an explicit handoff for an Agent caller."""
     from core.browser import is_login_page
     try:
         needs_login = await is_login_page(page)
     except Exception:
         return
     if not needs_login:
-        return
+        return None
     url = page.url
+    if handoff_on_login:
+        try:
+            title = await page.title()
+        except Exception:
+            title = ""
+        return {
+            "reason": "login_required",
+            "message": "Complete login, MFA, or the requested identity check in the local browser before resuming.",
+            "evidence": {"url": url, "title": title or ""},
+            "resume_condition": "The target page is no longer a login page.",
+        }
     print(f"\n🔐 检测到登录页：{url}", flush=True)
     print("   请在 Chrome 中完成登录，然后按回车继续...", flush=True)
     try:
         input()
     except EOFError:
         print("   （非交互模式，自动继续）", flush=True)
+    return None
 
 
 SYSTEM_PROMPT = """你是一个 RPA 执行 Agent，通过工具操作浏览器或桌面来完成目标。
@@ -105,7 +117,12 @@ def _record_trace(trace: list[dict] | None, tool: str, args: dict, content: list
     })
 
 
-async def run_browser(goal: str, page, trace: list[dict] | None = None) -> dict:
+async def run_browser(
+    goal: str,
+    page,
+    trace: list[dict] | None = None,
+    handoff_on_login: bool = False,
+) -> dict:
     """
     以浏览器为工具运行 subagent。
     page: 已连接的 Playwright Page 对象（由 harness 负责创建和关闭）。
@@ -147,7 +164,9 @@ async def run_browser(goal: str, page, trace: list[dict] | None = None) -> dict:
             _record_trace(trace, block.name, block.input, content, is_error)
 
             if block.name == "browser_navigate" and not is_error:
-                await _pause_if_login_required(page)
+                handoff = await _pause_if_login_required(page, handoff_on_login=handoff_on_login)
+                if handoff:
+                    return {"status": "needs_human_step", "human_step": handoff}
 
             tool_results.append({
                 "type": "tool_result",

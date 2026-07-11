@@ -38,7 +38,7 @@ python /path/to/rpa-everything/mcp_server.py
 }
 ```
 
-**连接后可用工具（33 个）：**
+**连接后可用工具（34 个）：**
 
 | 工具 | 说明 |
 |---|---|
@@ -74,6 +74,7 @@ python /path/to/rpa-everything/mcp_server.py
 | `orchestrate` | 接受自然语言目标，Harness 自动规划并执行；支持 `dry_run`、`export` 导出骨架脚本、`export_trace` 导出真实工具调用初稿脚本、`sop` 执行后截图验证 |
 | `skill_solidify` | 将 trace JSON 固化为可监督首跑的 Skill，并给出语法检查和风险 review 清单 |
 | `run_list` | 查询最近 Skill 运行记录或单次运行详情 |
+| `runtime_snapshot` | 只读查询本机 Harness 环境、可用 Skill/能力、安全边界和下一步建议 |
 
 ---
 
@@ -88,6 +89,7 @@ python /path/to/rpa-everything/mcp_server.py
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1  # Windows
 sh tools/setup.sh                                         # macOS / Linux
 python run.py harness/doctor
+python run.py harness/runtime --json
 
 python run.py showcase/web/extract_table -- --url https://example.com
 python run.py showcase/web/xiaohongshu/search_posts -- --keyword "露营" --output data/xhs_search.json
@@ -136,6 +138,9 @@ python run.py harness/agent -- --goal "..." --sop sops/feishu/post_circle.md
 
 # 允许执行发布/审批/发送等真实外部副作用任务时，必须显式确认
 python run.py harness/agent -- --goal "..." --confirm-external
+
+# 登录/MFA 需要人工时，返回结构化 needs_human_step，而不是等待终端输入
+python run.py harness/agent -- --goal "..." --handoff-on-login
 ```
 
 **列出所有可用 Skill：**

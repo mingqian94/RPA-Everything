@@ -92,6 +92,33 @@ def test_tool_error_fed_back_and_loop_continues(monkeypatch):
 
 
 @pytest.mark.unit
+def test_browser_login_can_return_structured_handoff(monkeypatch):
+    class FakePage:
+        url = "https://example.com/login"
+
+        async def title(self):
+            return "Sign in"
+
+    async def fake_exec(name, args, page):
+        return [{"type": "text", "text": "navigated"}]
+
+    async def fake_login_page(page):
+        return True
+
+    monkeypatch.setattr(agent_mod, "execute_browser_tool", fake_exec)
+    monkeypatch.setattr("core.browser.is_login_page", fake_login_page)
+    _patch_llm(monkeypatch, [
+        FakeResp("tool_use", [FakeBlock("tool_use", "browser_navigate", {"url": "https://example.com/login"})]),
+    ])
+
+    result = asyncio.run(agent_mod.run_browser("目标", FakePage(), handoff_on_login=True))
+
+    assert result["status"] == "needs_human_step"
+    assert result["human_step"]["reason"] == "login_required"
+    assert result["human_step"]["evidence"]["title"] == "Sign in"
+
+
+@pytest.mark.unit
 def test_max_steps_exceeded(monkeypatch):
     async def fake_exec(name, args, page):
         return [{"type": "text", "text": "点击完成。"}]

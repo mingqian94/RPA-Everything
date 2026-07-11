@@ -41,13 +41,13 @@ def main():
         sys.exit(0)
 
     skill_path = sys.argv[1].removesuffix(".py").strip("/\\").replace("/", ".").replace("\\", ".")
-    # doctor is a framework command, not a Skill. Give its argparse parser only
-    # the arguments after the module path so `python run.py harness/doctor --fix` works.
-    if skill_path == "harness.doctor":
-        from harness import doctor
+    # Framework commands are not Skills. Give their argparse parser only the
+    # arguments after the module path so `python run.py harness/doctor --fix` works.
+    if skill_path in {"harness.doctor", "harness.runtime"}:
+        from harness import doctor, runtime
 
         sys.argv = [sys.argv[0], *sys.argv[2:]]
-        doctor.main()
+        (doctor if skill_path == "harness.doctor" else runtime).main()
         return
 
     try:

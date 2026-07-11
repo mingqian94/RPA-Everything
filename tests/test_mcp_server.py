@@ -47,6 +47,11 @@ def test_orchestrate_exposes_confirm_external():
     assert "confirm_external" in orchestrate["input_schema"]["properties"]
 
 
+def test_orchestrate_exposes_login_handoff():
+    orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
+    assert "handoff_on_login" in orchestrate["input_schema"]["properties"]
+
+
 @pytest.mark.unit
 def test_orchestrate_exposes_export_trace():
     orchestrate = next(t for t in mcp_server._MCP_ONLY_TOOLS if t["name"] == "orchestrate")
@@ -61,4 +66,4 @@ def test_orchestrate_exposes_trace_json():
 
 def test_mcp_exposes_solidify_and_run_center():
     names = {tool["name"] for tool in mcp_server._MCP_ONLY_TOOLS}
-    assert {"skill_solidify", "run_list"} <= names
+    assert {"skill_solidify", "run_list", "runtime_snapshot"} <= names

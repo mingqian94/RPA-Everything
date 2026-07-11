@@ -52,4 +52,5 @@ def test_non_developer_onboarding_is_documented():
         assert "setup.ps1" in text
         assert "tools/setup.sh" in text
         assert "harness/doctor" in text
+        assert "harness/runtime" in text
         assert "workflow-template.zh-CN.md" in text

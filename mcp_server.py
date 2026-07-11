@@ -119,6 +119,7 @@ _MCP_ONLY_TOOLS = [
                 "trace_json": {"type": "string", "description": "导出可 replay 的工具调用轨迹 JSON 路径，如 data/outputs/trace.json"},
                 "sop": {"type": "string", "description": "SOP 文档本地路径（.md/.txt），执行后截图验证结果，留空则跳过"},
                 "confirm_external": {"type": "boolean", "description": "允许执行可能产生真实外部副作用的发布/审批/发送类任务"},
+                "handoff_on_login": {"type": "boolean", "description": "登录、MFA 等需要人工时返回 needs_human_step，不在进程里等待输入"},
             },
             "required": ["goal"],
         },
@@ -144,6 +145,16 @@ _MCP_ONLY_TOOLS = [
                 "skill": {"type": "string", "description": "可选：按 Skill 名称过滤"},
                 "limit": {"type": "integer", "description": "最多返回多少条，默认 20"},
                 "show": {"type": "string", "description": "可选：传入上一轮返回的 id，读取该运行详情"},
+            },
+        },
+    },
+    {
+        "name": "runtime_snapshot",
+        "description": "读取本机 Harness 运行时环境、可用 Skill、能力和安全边界；不会修改浏览器、设备或账号状态。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "include_optional": {"type": "boolean", "description": "是否检查可选 Android / iPhone 能力，默认 false"},
             },
         },
     },
@@ -248,6 +259,8 @@ async def _handle_orchestrate(arguments: dict):
         cmd += ["--sop", arguments["sop"]]
     if arguments.get("confirm_external"):
         cmd.append("--confirm-external")
+    if arguments.get("handoff_on_login"):
+        cmd.append("--handoff-on-login")
     try:
         result = await asyncio.to_thread(
             subprocess.run, cmd, capture_output=True, text=True, cwd=str(ROOT), timeout=600,
@@ -278,6 +291,16 @@ async def _handle_run_list(arguments: dict):
     return _text(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+async def _handle_runtime_snapshot(arguments: dict):
+    from harness.runtime import build_runtime_snapshot
+
+    result = await asyncio.to_thread(
+        build_runtime_snapshot,
+        include_optional=bool(arguments.get("include_optional", False)),
+    )
+    return _text(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 _HANDLERS = {
     "desktop_find_click": _handle_desktop_find_click,
     "skill_list": _handle_skill_list,
@@ -286,6 +309,7 @@ _HANDLERS = {
     "orchestrate": _handle_orchestrate,
     "skill_solidify": _handle_skill_solidify,
     "run_list": _handle_run_list,
+    "runtime_snapshot": _handle_runtime_snapshot,
 }
 
 

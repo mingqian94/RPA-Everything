@@ -250,7 +250,12 @@ def _external_commit_requested(spec: dict, task: dict) -> bool:
     return level == "external_draft" and any(a in {"--confirm", "--confirm-post", "--publish"} for a in args)
 
 
-async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False) -> dict:
+async def _run_task(
+    task: dict,
+    log: SkillLogger,
+    confirm_external: bool = False,
+    handoff_on_login: bool = False,
+) -> dict:
     """为一个子任务启动对应的 subagent，失败时带错误上下文自动重试一次。"""
     skill_name = task["skill"]
     label = task.get("label", skill_name)
@@ -291,7 +296,12 @@ async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False
             if spec["type"] == "browser":
                 page = await BrowserManager.new_page()
                 try:
-                    result = await run_browser(full_goal, page, trace=trace)
+                    result = await run_browser(
+                        full_goal,
+                        page,
+                        trace=trace,
+                        handoff_on_login=handoff_on_login,
+                    )
                     result.setdefault("trace", trace)
                 finally:
                     await page.close()
@@ -314,6 +324,13 @@ async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False
             print(f"  ✅ [{skill_name}] {label}", flush=True)
             return {"skill": skill_name, "label": label, **result}
 
+        if result["status"] == "needs_human_step":
+            handoff = result.get("human_step", {})
+            message = handoff.get("message", "需要人工完成当前步骤")
+            log.step(f"⏸ {label}: {message}")
+            print(f"  ⏸ [{skill_name}] {label}: {message}", flush=True)
+            return {"skill": skill_name, "label": label, **result}
+
         last_error = result.get("error", "未知错误")
         print(f"  ❌ [{skill_name}] {label}: {last_error[:200]}", flush=True)
 
@@ -321,7 +338,12 @@ async def _run_task(task: dict, log: SkillLogger, confirm_external: bool = False
     return {"skill": skill_name, "label": label, "status": "error", "error": last_error}
 
 
-async def _execute_plan(tasks: list[dict], log: SkillLogger, confirm_external: bool = False) -> list[dict]:
+async def _execute_plan(
+    tasks: list[dict],
+    log: SkillLogger,
+    confirm_external: bool = False,
+    handoff_on_login: bool = False,
+) -> list[dict]:
     """按规划顺序执行，parallel=true 的相邻任务并发（各自独立 page，无共享）。"""
     results = []
     group: list[dict] = []
@@ -329,7 +351,9 @@ async def _execute_plan(tasks: list[dict], log: SkillLogger, confirm_external: b
     async def flush_group():
         if not group:
             return
-        group_results = await asyncio.gather(*[_run_task(t, log, confirm_external) for t in group])
+        group_results = await asyncio.gather(*[
+            _run_task(t, log, confirm_external, handoff_on_login) for t in group
+        ])
         results.extend(group_results)
         group.clear()
 
@@ -338,7 +362,7 @@ async def _execute_plan(tasks: list[dict], log: SkillLogger, confirm_external: b
             group.append(task)
         else:
             await flush_group()
-            results.append(await _run_task(task, log, confirm_external))
+            results.append(await _run_task(task, log, confirm_external, handoff_on_login))
 
     await flush_group()
     return results
@@ -694,6 +718,7 @@ async def run(
     confirm_external: bool = False,
     export_trace_path: str = "",
     trace_json_path: str = "",
+    handoff_on_login: bool = False,
 ) -> list[dict]:
     log = SkillLogger("harness/agent")
     log.step(f"目标：{goal}")
@@ -720,16 +745,22 @@ async def run(
     print("\n🚀 启动 Subagent 执行...\n", flush=True)
 
     try:
-        results = await _execute_plan(tasks, log, confirm_external)
+        results = await _execute_plan(tasks, log, confirm_external, handoff_on_login)
     finally:
         await BrowserManager.close()
 
     ok = sum(1 for r in results if r["status"] == "ok")
     print(f"\n{'='*40}", flush=True)
+    handoffs = sum(1 for r in results if r["status"] == "needs_human_step")
     print(f"完成：{ok}/{len(results)} 步成功", flush=True)
+    if handoffs:
+        print(f"待人工交接：{handoffs} 步", flush=True)
     for r in results:
-        icon = "✅" if r["status"] == "ok" else "❌"
-        print(f"  {icon} {r['label']}: {r.get('result', r.get('error', ''))[:120]}", flush=True)
+        icon = "✅" if r["status"] == "ok" else ("⏸" if r["status"] == "needs_human_step" else "❌")
+        detail = r.get("result", r.get("error", ""))
+        if r["status"] == "needs_human_step":
+            detail = r.get("human_step", {}).get("message", "需要人工完成当前步骤")
+        print(f"  {icon} {r['label']}: {detail[:120]}", flush=True)
 
     if sop:
         sop_content = _load_sop(sop)
@@ -764,6 +795,8 @@ def main():
 
     parser.add_argument("--trace-json", default="", metavar="PATH",
                         help="Export replayable tool-call trace JSON after execution")
+    parser.add_argument("--handoff-on-login", action="store_true",
+                        help="Return needs_human_step when login/MFA is required instead of waiting for console input")
 
     try:
         sep = sys.argv.index("--")
@@ -780,6 +813,7 @@ def main():
         args.confirm_external,
         args.export_trace,
         args.trace_json,
+        args.handoff_on_login,
     ))
 
 

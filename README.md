@@ -43,6 +43,7 @@ After setup, open `config.yaml` and fill `llm.api_key` / `llm.model`.
 
 ```bash
 python run.py harness/doctor
+python run.py harness/runtime --json  # read-only Agent/runtime context
 ```
 
 Fix `FAIL` items. Android/iPhone `WARN` items are optional until you need phone automation.
@@ -349,6 +350,9 @@ The Harness is an **exploration tool, not a production executor**. Use it to qui
 # Step 1: see how the LLM decomposes the goal, confirm the direction
 python run.py harness/agent -- --goal "extract the table from this page" --dry-run
 
+# Optional: let an Agent inspect local readiness, Skills, and safety boundaries before planning
+python run.py harness/runtime --json
+
 # Step 2: provide an SOP document; a screenshot is verified against it after the run
 python run.py harness/agent -- --goal "extract the table from this page" --sop sops/my_task/extract.md
 
@@ -357,6 +361,9 @@ python run.py harness/agent -- --goal "extract the table from this page" --expor
 
 # Step 4: execute once, then export the actual tool-call trace as a first-draft Skill
 python run.py harness/agent -- --goal "extract the table from this page" --export-trace skills/my_task_daily.py
+
+# Optional: return a structured handoff for browser login/MFA instead of waiting for console input
+python run.py harness/agent -- --goal "open my CRM" --handoff-on-login
 
 # Optional: export replayable JSON trace, then dry-run replay it
 python run.py harness/agent -- --goal "extract the table from this page" --trace-json data/outputs/trace.json
@@ -442,7 +449,7 @@ Edit `~/.claude/claude_desktop_config.json` (create it if missing):
 
 Restart Claude Desktop; the `rpa-everything` toolbox appearing in the sidebar means you're connected.
 
-### Available tools (33)
+### Available tools (34)
 
 Browser, desktop, and Android tools share one schema definition with the agentic loop (`core/tools.py`), so they can't drift apart.
 
@@ -510,6 +517,7 @@ The iPhone path is semi-automation: it can prepare the phone, copy text, open an
 | `orchestrate` | Takes a natural-language goal, plans and executes multiple Skills; supports `dry_run` (plan only), `export` (skeleton script), `export_trace` (first-draft script from actual tool calls), `sop` (post-run screenshot verification) |
 | `skill_solidify` | Turns a trace JSON into a supervised-run Skill and returns syntax-check and review findings |
 | `run_list` | Lists recent Skill runs or reads one run record |
+| `runtime_snapshot` | Reads local Harness readiness, available Skills/capabilities, safety boundaries, and the recommended next command without changing local state |
 
 Skill run artifacts should go under `data/outputs/<skill>/<timestamp>/` by default. Use `--output <path>` when a stable path is required by another system.
 
