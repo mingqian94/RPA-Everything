@@ -10,6 +10,11 @@ An AI-powered automation framework for everyone who works with repetitive comput
 
 > **For AI agents**: if you are a desktop agent such as Claude Desktop or Codex, read [AGENTS.md](AGENTS.md) for integration instructions.
 
+> **For coding agents**: install the RPA-Everything Skill, then describe the repeated work in plain language:
+> `npx skills add mingqian94/RPA-Everything --skill rpa-everything`
+
+> **Need evidence before adopting it?** Read the [Capability Proof](docs/CAPABILITY-PROOF.md): verified paths, safety boundaries, and repeatable demo scripts.
+
 ---
 
 ## Fastest Path For Non-Developers
@@ -435,7 +440,7 @@ Edit `~/.claude/claude_desktop_config.json` (create it if missing):
 
 Restart Claude Desktop; the `rpa-everything` toolbox appearing in the sidebar means you're connected.
 
-### Available tools (24)
+### Available tools (33)
 
 Browser, desktop, and Android tools share one schema definition with the agentic loop (`core/tools.py`), so they can't drift apart.
 
@@ -501,6 +506,8 @@ The iPhone path is semi-automation: it can prepare the phone, copy text, open an
 | Tool | Description |
 |---|---|
 | `orchestrate` | Takes a natural-language goal, plans and executes multiple Skills; supports `dry_run` (plan only), `export` (skeleton script), `export_trace` (first-draft script from actual tool calls), `sop` (post-run screenshot verification) |
+| `skill_solidify` | Turns a trace JSON into a supervised-run Skill and returns syntax-check and review findings |
+| `run_list` | Lists recent Skill runs or reads one run record |
 
 Skill run artifacts should go under `data/outputs/<skill>/<timestamp>/` by default. Use `--output <path>` when a stable path is required by another system.
 

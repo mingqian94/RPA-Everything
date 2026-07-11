@@ -1,0 +1,4 @@
+interface:
+  display_name: "RPA-Everything"
+  short_description: "Install and use local workflow automation"
+  default_prompt: "Install RPA-Everything, check my environment, and help turn my repeated workflow into a reviewed Skill."
