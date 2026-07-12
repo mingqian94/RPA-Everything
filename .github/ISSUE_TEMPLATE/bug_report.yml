@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a reproducible framework or showcase failure.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include passwords, API keys, cookies, private URLs, customer data, or unreviewed screenshots.
+        Use `python run.py harness/runs -- --show RUN_ID --export bug-report.json` for a default-safe run summary.
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      description: Operating system, version, and device type when relevant.
+      placeholder: Windows 11 24H2, Android 15 via USB
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: Python 3.11.9
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: Automation target
+      options:
+        - Browser / DOM
+        - Desktop app
+        - Android
+        - iPhone assist
+        - Office file
+        - Harness / CLI
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command and redacted output
+      description: Replace private URLs and values with placeholders.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include only steps another person can safely repeat.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

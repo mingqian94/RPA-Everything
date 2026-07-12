@@ -2,6 +2,12 @@
 
 欢迎贡献 Skill、修复 Bug、或改进框架核心能力。
 
+## 推荐贡献闭环
+
+把一个可重复任务按 `SOP → trace → Skill → manifest → 监督首跑` 的路径提交：先用不含真实数据的 SOP 描述流程，再用 `--dry-run` 或合成 fixture 留下可审阅证据，最后补充 manifest 的平台、证据和风险说明。不要为提交 PR 而真实发布、发送、审批、付款、删除或改动远端数据。
+
+GitHub 已提供 Bug、自动化目标建议和 PR 模板。提交前请先阅读 [SECURITY.md](SECURITY.md)；公共 Issue 和 PR 不要包含密钥、Cookie、客户数据、私有 URL 或未审阅截图。
+
 ## 贡献类型
 
 ### 1. 提交 SOP 文档到 sops/
@@ -43,7 +49,7 @@ python run.py harness/agent -- \
 适合场景：你在某个行业 / 系统上有可复用的自动化流程，希望分享给其他人参考。
 
 **要求：**
-- 放在对应技术类型目录下：`showcase/web/`（浏览器类）、`showcase/app/`（桌面应用类）、`showcase/office/`（Excel/PPT/Word 文件操作），例如 `showcase/web/workday/export_attendance.py`
+- 放在对应技术类型目录下：`showcase/web/`（浏览器类）、`showcase/app/`（桌面应用类）、`showcase/mobile/android/` 或 `showcase/mobile/ios/`（手机类）、`showcase/office/`（Excel/PPT/Word 文件操作），例如 `showcase/web/workday/export_attendance.py`
 - 实现 `main()` 函数，使用 `core/` 提供的通用能力
 - 包含一个同目录的 `README.md`，说明：前置条件、参数配置、运行方式
 - 敏感信息（URL、账号）放入 `config.yaml` 读取，不硬编码

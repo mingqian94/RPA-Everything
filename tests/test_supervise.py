@@ -43,3 +43,18 @@ def test_drift_detection_and_repair_task_redact_evidence():
 
 def test_timeout_output_bytes_are_normalized():
     assert supervise._process_text(b"selector not found") == "selector not found"
+
+
+def test_supervised_run_summary_is_persisted_without_evidence(tmp_path):
+    manifest_path = tmp_path / "workflow.manifest.json"
+    manifest = {"skill": "skills/workflow.py", "review": {"last_supervised_run": None}}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = supervise._record_supervised_run(
+        str(manifest_path), manifest, {"status": "failed", "exit_code": 1, "evidence": "private output"}
+    )
+    saved = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert result["last_supervised_run"]["status"] == "failed"
+    assert result["last_supervised_run"]["evidence_available"]
+    assert "evidence" not in saved["review"]["last_supervised_run"]

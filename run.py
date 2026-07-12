@@ -43,14 +43,15 @@ def main():
     skill_path = sys.argv[1].removesuffix(".py").strip("/\\").replace("/", ".").replace("\\", ".")
     # Framework commands are not Skills. Give their argparse parser only the
     # arguments after the module path so `python run.py harness/doctor --fix` works.
-    if skill_path in {"harness.doctor", "harness.runtime", "harness.demo", "harness.supervise"}:
-        from harness import demo, doctor, runtime, supervise
+    if skill_path in {"harness.doctor", "harness.runtime", "harness.demo", "harness.runs", "harness.supervise"}:
+        from harness import demo, doctor, runs, runtime, supervise
 
         sys.argv = [sys.argv[0], *sys.argv[2:]]
         commands = {
             "harness.doctor": doctor,
             "harness.runtime": runtime,
             "harness.demo": demo,
+            "harness.runs": runs,
             "harness.supervise": supervise,
         }
         commands[skill_path].main()

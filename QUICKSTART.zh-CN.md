@@ -52,6 +52,8 @@ python run.py harness/demo
 
 它只读取仓库内置 trace，展示 `doctor → runtime → replay --dry-run → solidify` 的产物链；不联网、不打开浏览器、不写文件，也不会执行外部操作。
 
+想先跑一个真正有结果、但没有账号和外部写入的任务，按[十分钟完成第一个有用任务](docs/first-use.zh-CN.md)操作。
+
 ## 3. 先把工作讲清楚
 
 复制 [任务描述模板](docs/workflow-template.zh-CN.md)，补全目标系统、开始前的准备、人工步骤、成功标准和禁止事项。
@@ -107,6 +109,8 @@ python run.py harness/supervise -- --manifest skills/my_workflow.manifest.json -
 ```
 
 `supervise` 遇到 selector、模板或 UI 节点可能漂移时会停止并返回脱敏证据和 repair task；命令成功退出后仍需人工核对业务结果。详见 [监督首跑与修复](docs/supervised-run.zh-CN.md)。
+
+首次运行或准备定时前，按 [Skill 审阅与安全故障报告](docs/skill-review.zh-CN.md) 检查 manifest；需要求助时可导出默认不含 URL、截图和结果正文的报告。
 
 ## 本地账号和数据
 

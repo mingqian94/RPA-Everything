@@ -68,6 +68,37 @@ def get_run(run_id: str, log_dir: Path | None = None) -> dict[str, Any]:
     return redact(record)
 
 
+def build_bug_report(run_id: str, log_dir: Path | None = None, include_redacted_details: bool = False) -> dict[str, Any]:
+    """Build a shareable report without including page content, URLs, or screenshots by default."""
+    record = get_run(run_id, log_dir=log_dir)
+    report: dict[str, Any] = {
+        "version": 1,
+        "privacy": "Default report excludes step details, result payloads, screenshots, and URLs.",
+        "run": {
+            "id": run_id,
+            "skill": record.get("skill", "unknown"),
+            "started_at": record.get("started_at", ""),
+            "finished_at": record.get("finished_at", ""),
+            "status": _status(record),
+            "step_count": len(record.get("steps", [])),
+        },
+        "steps": [
+            {"status": step.get("status", ""), "time": step.get("time", "")}
+            for step in record.get("steps", [])
+        ],
+        "reporter_checklist": [
+            "Add operating system, Python version, and the exact command separately.",
+            "Do not attach screenshots, URLs, customer data, cookies, or secrets without reviewing them.",
+        ],
+    }
+    if include_redacted_details:
+        report["redacted_details"] = {
+            "steps": record.get("steps", []),
+            "result": record.get("result"),
+        }
+    return report
+
+
 def _argv() -> list[str]:
     try:
         return sys.argv[sys.argv.index("--") + 1:]
@@ -80,11 +111,21 @@ def main() -> None:
     parser.add_argument("--skill", default="", help="Only include skill names containing this text.")
     parser.add_argument("--limit", type=int, default=20, help="Maximum run summaries to return.")
     parser.add_argument("--show", default="", metavar="RUN_ID", help="Show one run id returned by the list.")
+    parser.add_argument("--export", default="", metavar="PATH", help="Export a default-safe bug report for --show.")
+    parser.add_argument("--include-redacted-details", action="store_true", help="Include redacted step details and result payload in an exported report.")
     parser.add_argument("--json", action="store_true", help="Print JSON instead of a compact table.")
     args = parser.parse_args(_argv())
 
-    if args.show:
-        output: Any = get_run(args.show)
+    if args.export and not args.show:
+        parser.error("--export requires --show RUN_ID")
+    if args.show and args.export:
+        output = build_bug_report(args.show, include_redacted_details=args.include_redacted_details)
+        destination = Path(args.export)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+        output = {"exported_to": str(destination), "report": output}
+    elif args.show:
+        output = get_run(args.show)
     else:
         output = list_runs(skill=args.skill, limit=max(1, args.limit))
 

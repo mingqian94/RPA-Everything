@@ -57,6 +57,10 @@ python run.py harness/demo            # no-key, no-network lifecycle preview
 
 Fix `FAIL` items. Android/iPhone `WARN` items are optional until you need phone automation.
 
+### First useful task, no API key
+
+Follow the bilingual [ten-minute first-use guide](docs/first-use.md) to extract a public web table into a local CSV. It performs no login or external write.
+
 ### 3. Describe the workflow and generate a Skill
 
 Use [the workflow template](docs/workflow-template.zh-CN.md) if you need a structure, then run:
@@ -73,6 +77,8 @@ For browser tasks, start the dedicated Chrome first:
 tools\start_chrome.bat     # Windows
 sh tools/start_chrome.sh   # macOS
 ```
+
+Before a first supervised run or scheduling, read the [Skill review guide](docs/skill-review.md). It explains manifest review fields and default-safe bug-report export.
 
 ---
 

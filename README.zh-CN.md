@@ -54,6 +54,10 @@ python run.py harness/demo            # 无 Key、无联网、无外部操作的
 
 如果显示 `FAIL`，按提示修复；如果只是 Android/iPhone 的 `WARN`，不用手机能力时可以先忽略。
 
+### 无 API Key 的第一个有用任务
+
+按[中英文十分钟跟做指南](docs/first-use.zh-CN.md)把公开网页表格导出到本地 CSV。该任务不登录、不写入外部系统。
+
 ### 3. 讲清楚工作步骤，让 Agent 生成 Skill
 
 先用 [任务描述模板](docs/workflow-template.zh-CN.md) 把流程写清楚，然后执行：
@@ -70,6 +74,8 @@ python run.py skills/my_workflow
 tools\start_chrome.bat     # Windows
 sh tools/start_chrome.sh   # macOS
 ```
+
+首次监督运行或配置定时任务前，阅读 [Skill 审阅指南](docs/skill-review.zh-CN.md)。其中说明了 manifest 的审阅字段和默认安全的故障报告导出方式。
 
 ---
 

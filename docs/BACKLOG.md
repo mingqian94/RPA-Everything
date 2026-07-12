@@ -26,7 +26,7 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 
 - [ ] Convert the three most common user goals into copy-paste workflow templates and reproducible Skills.
 - [ ] Turn the clean-install results into a small platform compatibility matrix: Windows, macOS, Android, iPhone assist, Linux, and HarmonyOS.
-- [ ] Add an issue template for failed setup / doctor results and a feature-request template for a new automation target.
+- [x] Add an issue template for failed setup / doctor results and a feature-request template for a new automation target.
 - [ ] Add one contribution-ready example that starts as an SOP, captures a trace, and lands as a reviewed Skill.
 - [ ] Review Product Hunt and GitHub feedback weekly; close the loop with a public changelog entry for accepted fixes.
 
@@ -34,10 +34,10 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 
 ### P1: Trustworthy Skill Lifecycle
 
-- [ ] Make Skill manifests easier to inspect: input assumptions, target platform, required permissions, external-action risk, and last supervised run.
+- [x] Make Skill manifests easier to inspect: input assumptions, target platform, required permissions, external-action risk, and last supervised run.
 - [x] Record the evidence level used by each solidified step (network/API, DOM selector, template, coordinate), its fallback, and the latest supervised proof.
 - [ ] Add regression fixtures for trace solidification and redaction so a framework change cannot weaken safety boundaries unnoticed.
-- [ ] Improve run history export for bug reports while keeping screenshots, URLs, and secrets opt-in and redacted by default.
+- [x] Improve run history export for bug reports while keeping screenshots, URLs, and secrets opt-in and redacted by default.
 - [x] Add a clear recovery path when a deterministic Skill detects UI drift: stop, capture redacted evidence, and return a repair task to the Agent.
 - [x] Return `needs_human_step` for browser login/MFA, including evidence, the requested user action, and a resume condition. Extend this to other interaction types only when their detection is reliable.
 
@@ -46,8 +46,8 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 - [ ] Reduce first-run configuration to a guided doctor result with precise next actions, without handling or storing user secrets in the repository.
 - [x] Add a safe Agent bootstrap and no-key lifecycle preview: install dependencies, create only a template config, then inspect a bundled trace without network or external actions.
 - [x] Add a read-only Agent runtime snapshot: available Skills, connected browser/device state, safety policy, and the recommended next command.
-- [ ] Add a plain-language Skill review checklist before a user enables scheduling or external actions.
-- [ ] Provide a minimal "first useful task" walkthrough that takes under ten minutes and has no external side effect.
+- [x] Add a plain-language Skill review checklist before a user enables scheduling or external actions.
+- [x] Provide a minimal "first useful task" walkthrough that takes under ten minutes and has no external side effect.
 
 ### P2: Evidence and Showcase Coverage
 

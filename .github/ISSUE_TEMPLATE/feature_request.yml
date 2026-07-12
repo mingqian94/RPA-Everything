@@ -1,0 +1,53 @@
+name: Automation target request
+description: Propose a repeatable workflow or framework capability.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Do not submit account details, customer data, private URLs, screenshots, or credentials.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Repeated work and desired outcome
+      description: Describe the work in plain language and how often it repeats.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target platform
+      options:
+        - Browser / DOM
+        - Desktop app
+        - Android
+        - iPhone assist
+        - Office file
+        - Direct API / CLI / MCP integration
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Safe outline of manual steps
+      description: Omit private names, URLs, and data.
+    validations:
+      required: true
+  - type: dropdown
+    id: side_effect
+    attributes:
+      label: Does the workflow cause an external action?
+      options:
+        - No, read-only or local output only
+        - Draft only, stop before final action
+        - Yes, it may send, publish, approve, pay, delete, or change remote data
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence available
+      description: State whether you can provide a public demo, synthetic fixture, or a redacted SOP.
+    validations:
+      required: true

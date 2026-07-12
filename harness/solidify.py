@@ -89,6 +89,53 @@ def supervision_contract(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def build_skill_review(record: dict[str, Any], assessment: dict[str, Any]) -> dict[str, Any]:
+    """Create a concise human review surface from trace facts, not claims of safety."""
+    tools = [item["tool"] for _, item in iter_tool_calls(record)]
+    platforms: list[str] = []
+    permissions: list[str] = []
+    if any(tool.startswith("browser_") for tool in tools):
+        platforms.append("browser")
+        permissions.append("Chrome DevTools access to the dedicated RPA browser profile")
+    if any(tool.startswith("android_") for tool in tools):
+        platforms.append("android")
+        permissions.append("Authorized Android Debug Bridge (ADB) device")
+    if any(tool.startswith("desktop_") for tool in tools):
+        platforms.append("desktop")
+        permissions.append("Local desktop accessibility and screen-control permission")
+    if any(tool.startswith("ios_") for tool in tools):
+        platforms.append("ios_assist")
+        permissions.append("Connected iPhone with the documented assist prerequisites")
+    if not platforms:
+        platforms.append("local")
+        permissions.append("Local files and declared command prerequisites")
+
+    serialized_calls = "\n".join(json.dumps(item.get("args", {}), ensure_ascii=False).lower()
+                                  for _, item in iter_tool_calls(record))
+    external_risk = "external_action_review_required" if any(word in serialized_calls for word in _SIDE_EFFECT_WORDS) else "none_detected"
+    checklist = [
+        "Confirm the target system, account scope, and expected business result.",
+        "Check each preflight requirement on the target machine.",
+        "Review generated code and every non-selector/coordinate action before the first run.",
+        "Run once under supervision and inspect the business result before scheduling.",
+    ]
+    if external_risk != "none_detected":
+        checklist.insert(3, "Keep the final external action behind an explicit human confirmation.")
+    if assessment["review_reasons"]:
+        checklist.insert(3, "Resolve every manifest review reason before running the Skill.")
+    return {
+        "target_platforms": platforms,
+        "required_permissions": permissions,
+        "input_assumptions": [
+            "The trace represents one reviewed workflow and does not contain real secrets.",
+            "Runtime values must be supplied as arguments or ${secret:name} references, not copied from the trace.",
+        ],
+        "external_action_risk": external_risk,
+        "checklist": checklist,
+        "last_supervised_run": None,
+    }
+
+
 def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
     """Export, syntax-check, and assess a trace-derived Skill without executing it."""
     record = load_trace(trace_path)
@@ -99,7 +146,7 @@ def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
     assessment = assess_trace(record)
     dry_run = replay_trace_sync(record, dry_run=True)
     manifest = {
-        "version": 1,
+        "version": 2,
         "trace": str(Path(trace_path)),
         "skill": str(output),
         "dry_run_steps": dry_run,
@@ -107,6 +154,7 @@ def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
         "evidence": summarize_evidence(record),
         "routes": [route_for_trace_result(result) for result in record.get("results", [])],
         "supervision": supervision_contract(record),
+        "review": build_skill_review(record, assessment),
         **assessment,
         "next_step": "Run once under supervision and review evidence before scheduling.",
     }

@@ -56,6 +56,15 @@ def test_non_developer_onboarding_is_documented():
         assert "workflow-template.zh-CN.md" in text
 
 
+def test_first_use_guides_are_bilingual_and_linked():
+    for filename in ("README.md", "README.zh-CN.md", "QUICKSTART.zh-CN.md"):
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        assert "first-use" in text
+
+    assert (ROOT / "docs" / "first-use.md").exists()
+    assert (ROOT / "docs" / "first-use.zh-CN.md").exists()
+
+
 def test_agent_bootstrap_and_supervised_run_are_documented():
     for filename in ("README.md", "README.zh-CN.md", "QUICKSTART.zh-CN.md", "AGENTS.md"):
         text = (ROOT / filename).read_text(encoding="utf-8")

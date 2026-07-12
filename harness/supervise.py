@@ -6,6 +6,7 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,20 @@ def repair_task(manifest: dict[str, Any], evidence: str) -> dict[str, str]:
     }
 
 
+def _record_supervised_run(manifest_path: str, manifest: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
+    """Persist only a redacted summary of an explicitly requested supervised execution."""
+    review = manifest.setdefault("review", {})
+    review["last_supervised_run"] = {
+        "attempted_at": datetime.now(timezone.utc).isoformat(),
+        "status": result.get("status", "unknown"),
+        "exit_code": result.get("exit_code"),
+        "evidence_available": bool(result.get("evidence")),
+    }
+    Path(manifest_path).write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    result["last_supervised_run"] = review["last_supervised_run"]
+    return result
+
+
 def supervise_manifest(manifest_path: str, execute: bool = False) -> dict[str, Any]:
     """Preflight a manifest, optionally execute it once, and stop on suspected drift."""
     manifest = load_manifest(manifest_path)
@@ -104,19 +119,21 @@ def supervise_manifest(manifest_path: str, execute: bool = False) -> dict[str, A
         )
     except subprocess.TimeoutExpired as exc:
         evidence = _process_text(exc.stdout) + "\n" + _process_text(exc.stderr) + "\nSkill timed out after 300 seconds."
-        return {"checks": checks, **repair_task(manifest, evidence)}
+        return _record_supervised_run(manifest_path, manifest, {"checks": checks, **repair_task(manifest, evidence)})
     output = redact_text((result.stdout + "\n" + result.stderr).strip())
     if result.returncode != 0:
         if is_probable_drift(output):
-            return {"checks": checks, **repair_task(manifest, output)}
-        return {"status": "failed", "checks": checks, "exit_code": result.returncode, "evidence": output[-2000:]}
-    return {
+            return _record_supervised_run(manifest_path, manifest, {"checks": checks, **repair_task(manifest, output)})
+        return _record_supervised_run(manifest_path, manifest, {
+            "status": "failed", "checks": checks, "exit_code": result.returncode, "evidence": output[-2000:],
+        })
+    return _record_supervised_run(manifest_path, manifest, {
         "status": "needs_result_review",
         "checks": checks,
         "exit_code": 0,
         "evidence": output[-2000:],
         "next": "The process exited successfully. Verify the declared business result and saved evidence before scheduling this Skill.",
-    }
+    })
 
 
 def _argv() -> list[str]:
