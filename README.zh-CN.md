@@ -36,11 +36,20 @@ sh tools/setup.sh
 
 安装完成后，打开 `config.yaml`，填写 `llm.api_key` 和 `llm.model`。
 
+也可以让能执行命令的 Agent 完成安全安装、体检和本地 demo：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\agent-bootstrap.ps1
+```
+
+它不会填写密钥、打开登录窗口或执行外部操作；可直接交给 Agent 的提示词见 [Agent 自助安装](docs/agent-bootstrap.zh-CN.md)。
+
 ### 2. 体检环境
 
 ```bash
 python run.py harness/doctor
 python run.py harness/runtime --json  # 只读输出 Agent 可用环境与下一步建议
+python run.py harness/demo            # 无 Key、无联网、无外部操作的生命周期预览
 ```
 
 如果显示 `FAIL`，按提示修复；如果只是 Android/iPhone 的 `WARN`，不用手机能力时可以先忽略。
@@ -374,6 +383,10 @@ python run.py harness/agent -- --goal "打开我的 CRM" --handoff-on-login
 # 可选：导出可 replay 的 JSON trace，再 dry-run 回放
 python run.py harness/agent -- --goal "提取这个网页里的表格数据" --trace-json data/outputs/trace.json
 python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
+
+# 先检查前置条件，再在人工看护下首跑；疑似漂移会返回 repair task
+python run.py harness/supervise -- --manifest skills/my_task_daily.manifest.json
+python run.py harness/supervise -- --manifest skills/my_task_daily.manifest.json --run
 
 # 将轨迹固化成可监督首跑的 Skill，并查看生成的 manifest 风险清单
 python run.py harness/solidify -- --trace data/outputs/trace.json --output skills/my_task_daily.py

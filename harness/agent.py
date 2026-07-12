@@ -35,6 +35,7 @@ from core.browser import BrowserManager
 from core.logger import SkillLogger
 from core.agent import run_android, run_browser, run_desktop
 from core.capabilities import build_skill_registry
+from harness.routes import annotate_tasks, route_for_skill, route_for_trace_result
 from harness.trace import export_trace_json
 
 # ── 技能注册表 ────────────────────────────────────────────────────────────────
@@ -267,10 +268,12 @@ async def _run_task(
                 "error": f"未知技能：{skill_name}"}
 
     spec = SKILL_REGISTRY[skill_name]
+    route = task.get("route") or route_for_skill(skill_name, spec)
     if _external_commit_requested(spec, task) and not confirm_external:
         return {
             "skill": skill_name,
             "label": label,
+            "route": route,
             "status": "error",
             "error": (
                 "该任务可能产生真实外部副作用。请人工确认后使用 "
@@ -281,6 +284,11 @@ async def _run_task(
     base_goal = task["goal"]
     if spec.get("hint"):
         base_goal += f"\n\n技术提示：\n{spec['hint']}"
+    base_goal += (
+        f"\n\n已选自动化路线：{route['selected']}。"
+        f"降级顺序：{' -> '.join(route['fallbacks'])}。"
+        f"视觉识别规则：{route['vision']}"
+    )
 
     last_error = ""
     for attempt in range(1, max_attempts + 1):
@@ -323,20 +331,20 @@ async def _run_task(
             summary = str(result.get("result", ""))[:100]
             log.step(f"✅ {label}: {summary}")
             print(f"  ✅ [{skill_name}] {label}", flush=True)
-            return {"skill": skill_name, "label": label, **result}
+            return {"skill": skill_name, "label": label, "route": route, **result}
 
         if result["status"] == "needs_human_step":
             handoff = result.get("human_step", {})
             message = handoff.get("message", "需要人工完成当前步骤")
             log.step(f"⏸ {label}: {message}")
             print(f"  ⏸ [{skill_name}] {label}: {message}", flush=True)
-            return {"skill": skill_name, "label": label, **result}
+            return {"skill": skill_name, "label": label, "route": route, **result}
 
         last_error = result.get("error", "未知错误")
         print(f"  ❌ [{skill_name}] {label}: {last_error[:200]}", flush=True)
 
     log.step(f"❌ {label}: {last_error[:100]}")
-    return {"skill": skill_name, "label": label, "status": "error", "error": last_error}
+    return {"skill": skill_name, "label": label, "route": route, "status": "error", "error": last_error}
 
 
 async def _execute_plan(
@@ -468,7 +476,11 @@ def _export_skill_readme(goal: str, tasks: list[dict], path: Path) -> Path:
         ]
     lines += ["", "## Generated plan", ""]
     for index, task in enumerate(tasks, 1):
+        route = task.get("route") or route_for_skill(
+            task.get("skill", ""), SKILL_REGISTRY.get(task.get("skill", ""), {})
+        )
         lines.append(f"{index}. {task.get('label') or task.get('goal') or task.get('skill', 'unnamed step')}")
+        lines.append(f"   Route: {route['selected']} -> {', '.join(route['fallbacks'])}")
     lines.append("")
     readme_path.write_text("\n".join(lines), encoding="utf-8")
     return readme_path
@@ -509,11 +521,13 @@ def export_plan(goal: str, tasks: list[dict], output_path: str) -> None:
         spec = SKILL_REGISTRY.get(skill, {})
         task_type = spec.get("type", "browser")
         hint = spec.get("hint", "")
+        route = task.get("route") or route_for_skill(skill, spec)
 
         lines += [
             f'    # ── 步骤 {i}：{label} ──',
             f'    # skill: {skill}  type: {task_type}',
             f'    # 目标：{goal_text[:120]}',
+            f"    # route: {route['selected']} -> {', '.join(route['fallbacks'])}",
         ]
         if hint:
             first_hint_line = hint.splitlines()[0]
@@ -606,6 +620,8 @@ def export_trace(goal: str, results: list[dict], output_path: str) -> None:
     for result in results:
         lines.append("")
         lines.append(f"    # ── {result.get('label', result.get('skill', 'step'))} ──")
+        route = route_for_trace_result(result)
+        lines.append(f"    # route: {route['selected']} -> {', '.join(route['fallbacks'])}")
         if result.get("skill", "").startswith("skill:"):
             spec = SKILL_REGISTRY.get(result["skill"], {})
             skill_path = spec.get("path", result["skill"].removeprefix("skill:"))
@@ -724,7 +740,7 @@ async def run(
     log = SkillLogger("harness/agent")
     log.step(f"目标：{goal}")
 
-    tasks = plan(goal)
+    tasks = annotate_tasks(plan(goal), SKILL_REGISTRY)
     log.step(f"规划完成，共 {len(tasks)} 步")
 
     print(f"\n📋 执行计划（{len(tasks)} 步）：", flush=True)
@@ -732,6 +748,8 @@ async def run(
         hint = " [可并发]" if t.get("parallel") else ""
         print(f"  {i}. [{t.get('skill')}] {t.get('label', '')}{hint}", flush=True)
         print(f"     目标：{t.get('goal', '')[:100]}", flush=True)
+        route = t["route"]
+        print(f"     路线：{route['selected']} -> {', '.join(route['fallbacks'])}", flush=True)
 
     if export:
         export_plan(goal, tasks, export)

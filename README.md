@@ -39,11 +39,20 @@ sh tools/setup.sh
 
 After setup, open `config.yaml` and fill `llm.api_key` / `llm.model`.
 
+An Agent with shell access can perform the safe install, doctor, and local demo:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\agent-bootstrap.ps1
+```
+
+It never writes a key, opens a login flow, or performs an external action. See [Agent bootstrap](docs/agent-bootstrap.zh-CN.md) for the prompt to give an Agent.
+
 ### 2. Check readiness
 
 ```bash
 python run.py harness/doctor
 python run.py harness/runtime --json  # read-only Agent/runtime context
+python run.py harness/demo            # no-key, no-network lifecycle preview
 ```
 
 Fix `FAIL` items. Android/iPhone `WARN` items are optional until you need phone automation.
@@ -373,6 +382,10 @@ python run.py harness/agent -- --goal "open my CRM" --handoff-on-login
 # Optional: export replayable JSON trace, then dry-run replay it
 python run.py harness/agent -- --goal "extract the table from this page" --trace-json data/outputs/trace.json
 python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
+
+# Preflight a trace-derived Skill, then run it once under supervision
+python run.py harness/supervise -- --manifest skills/my_task_daily.manifest.json
+python run.py harness/supervise -- --manifest skills/my_task_daily.manifest.json --run
 
 # Optional: run the static Harness eval set
 python evals/run.py

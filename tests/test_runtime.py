@@ -49,3 +49,16 @@ def test_run_entrypoint_dispatches_runtime(monkeypatch):
     runpy.run_path(str(runtime.__file__).replace("harness\\runtime.py", "run.py"), run_name="__main__")
 
     assert called[0][1:] == ["--required-only"]
+
+
+@pytest.mark.unit
+def test_run_entrypoint_dispatches_demo(monkeypatch):
+    from harness import demo
+
+    called = []
+    monkeypatch.setattr(sys, "argv", ["run.py", "harness/demo", "--json"])
+    monkeypatch.setattr(demo, "main", lambda: called.append(list(sys.argv)))
+
+    runpy.run_path(str(demo.__file__).replace("harness\\demo.py", "run.py"), run_name="__main__")
+
+    assert called[0][1:] == ["--json"]

@@ -56,6 +56,17 @@ def test_non_developer_onboarding_is_documented():
         assert "workflow-template.zh-CN.md" in text
 
 
+def test_agent_bootstrap_and_supervised_run_are_documented():
+    for filename in ("README.md", "README.zh-CN.md", "QUICKSTART.zh-CN.md", "AGENTS.md"):
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        assert "agent-bootstrap" in text
+        assert "harness/demo" in text
+        assert "harness/supervise" in text
+
+    assert (ROOT / "docs" / "agent-bootstrap.zh-CN.md").exists()
+    assert (ROOT / "docs" / "supervised-run.zh-CN.md").exists()
+
+
 def test_app_routes_distinguish_direct_integrations_from_desktop_fallbacks():
     text = (ROOT / "showcase" / "app" / "README.md").read_text(encoding="utf-8")
     integration = (ROOT / "showcase" / "app" / "integration" / "README.md").read_text(encoding="utf-8")

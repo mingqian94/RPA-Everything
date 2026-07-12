@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from harness.agent import export_trace
+from harness.routes import route_for_trace_result
 from harness.trace import iter_tool_calls, load_trace, replay_trace_sync
 
 _REVIEW_TOOLS = {"desktop_click", "desktop_type", "desktop_hotkey", "browser_evaluate"}
@@ -68,6 +69,26 @@ def assess_trace(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def supervision_contract(record: dict[str, Any]) -> dict[str, Any]:
+    """Declare preflight, result review, and repair behavior without running a Skill."""
+    tools = [item["tool"] for _, item in iter_tool_calls(record)]
+    preflight = []
+    if any(tool.startswith("browser_") for tool in tools):
+        preflight.append("Chrome DevTools must be reachable at the configured CDP endpoint.")
+    if any(tool.startswith("android_") for tool in tools):
+        preflight.append("The recorded Android device must be online and authorized through ADB.")
+    if not preflight:
+        preflight.append("Review local input files and declared command prerequisites.")
+    return {
+        "preflight": preflight,
+        "result_review": "A zero process exit is not proof of a business result; inspect declared output or visible evidence before scheduling.",
+        "drift_recovery": (
+            "On selector/template/UI-node failure, stop without retrying external actions, preserve redacted output, "
+            "and return a repair task based on the original trace."
+        ),
+    }
+
+
 def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
     """Export, syntax-check, and assess a trace-derived Skill without executing it."""
     record = load_trace(trace_path)
@@ -84,6 +105,8 @@ def solidify_trace(trace_path: str, output_path: str) -> dict[str, Any]:
         "dry_run_steps": dry_run,
         "syntax_checked": True,
         "evidence": summarize_evidence(record),
+        "routes": [route_for_trace_result(result) for result in record.get("results", [])],
+        "supervision": supervision_contract(record),
         **assessment,
         "next_step": "Run once under supervision and review evidence before scheduling.",
     }

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "goal": "Bundled first-run demonstration: inspect a reviewed browser trace without opening a browser.",
+  "results": [
+    {
+      "skill": "browser_explore",
+      "label": "Read-only browser trace example",
+      "status": "ok",
+      "route": {
+        "selected": "browser_dom",
+        "reason": "Browser tasks prefer selectors, page text, and DOM extraction.",
+        "fallbacks": ["browser_vision_with_review", "human_confirmation"],
+        "vision": "last resort after DOM evidence is unavailable"
+      },
+      "trace": [
+        {
+          "tool": "browser_navigate",
+          "args": {"url": "https://example.com"},
+          "is_error": false
+        },
+        {
+          "tool": "browser_click",
+          "args": {"selector": "a"},
+          "is_error": false
+        }
+      ]
+    }
+  ]
+}

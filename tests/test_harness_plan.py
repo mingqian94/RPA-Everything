@@ -111,6 +111,7 @@ def test_run_task_dispatches_android(monkeypatch):
 
     assert result["status"] == "ok"
     assert result["skill"] == "android_explore"
+    assert result["route"]["selected"] == "android_ui_node"
     assert "android_devices" in calls[0]
     assert result["trace"][0]["tool"] == "android_devices"
     assert "屏幕比例坐标" in calls[0]
@@ -130,6 +131,7 @@ def test_export_plan_includes_android_template(tmp_path):
     assert "dev = AndroidDevice()" in text
     assert "tap_ratio" in text
     assert "待确认" in text
+    assert "route: android_ui_node" in text
     guide = tmp_path / "android_flow.README.md"
     assert guide.exists()
     assert "操作手机" in guide.read_text(encoding="utf-8")
@@ -216,3 +218,4 @@ def test_export_trace_writes_browser_and_android_steps(tmp_path):
     assert "dev.tap_ratio(0.5, 0.25)" in text
     assert "dev.tap_ui_node(text='发布'" in text
     assert "restore_ime=True" in text
+    assert "route: browser_dom" in text

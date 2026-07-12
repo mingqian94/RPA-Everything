@@ -26,6 +26,8 @@ def test_solidify_trace_exports_checked_skill_and_manifest(tmp_path):
     assert result["status"] == "ready_for_supervised_run"
     assert result["tool_count"] == 2
     assert result["evidence"]["counts"] == {"browser_command": 1, "dom_selector": 1}
+    assert result["routes"][0]["selected"] == "browser_dom"
+    assert "Chrome DevTools" in result["supervision"]["preflight"][0]
 
 
 @pytest.mark.unit

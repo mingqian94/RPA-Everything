@@ -4,6 +4,22 @@
 
 ## 1. 安装并完成体检
 
+让 Codex、Claude 等能执行命令的 Agent 自己完成安全安装时，直接使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\agent-bootstrap.ps1
+```
+
+macOS / Linux：
+
+```bash
+sh tools/agent-bootstrap.sh
+```
+
+它只安装依赖、创建缺失的配置模板、运行体检和本地 demo；不会填写 Key、启动登录、打开浏览器或执行外部操作。可直接交给 Agent 的完整提示词见 [Agent 自助安装](docs/agent-bootstrap.zh-CN.md)。
+
+手动安装仍可使用：
+
 Windows：
 
 ```powershell
@@ -26,7 +42,17 @@ python run.py harness/doctor
 
 Android 和 iPhone 的 `WARN` 是可选能力提示；暂时不做手机自动化时可以忽略。
 
-## 2. 先把工作讲清楚
+## 2. 无 Key 先看完整生命周期
+
+在填写 LLM Key 前，可以运行这个只读预览：
+
+```bash
+python run.py harness/demo
+```
+
+它只读取仓库内置 trace，展示 `doctor → runtime → replay --dry-run → solidify` 的产物链；不联网、不打开浏览器、不写文件，也不会执行外部操作。
+
+## 3. 先把工作讲清楚
 
 复制 [任务描述模板](docs/workflow-template.zh-CN.md)，补全目标系统、开始前的准备、人工步骤、成功标准和禁止事项。
 
@@ -46,7 +72,7 @@ tools\start_chrome.bat
 sh tools/start_chrome.sh
 ```
 
-## 3. 导出、检查、再运行
+## 4. 导出、检查、再运行
 
 确认计划合理后，导出为一个可以继续完善的 Skill：
 
@@ -72,6 +98,15 @@ python run.py harness/solidify -- --trace data/outputs/trace.json --output skill
 ```
 
 它会生成同名 `.manifest.json`。只有 `ready_for_supervised_run` 才表示可以在人工看护下首跑；这不等于可以直接定时运行或执行最终外部操作。
+
+先检查前置条件，再在人工看护下首跑：
+
+```bash
+python run.py harness/supervise -- --manifest skills/my_workflow.manifest.json
+python run.py harness/supervise -- --manifest skills/my_workflow.manifest.json --run
+```
+
+`supervise` 遇到 selector、模板或 UI 节点可能漂移时会停止并返回脱敏证据和 repair task；命令成功退出后仍需人工核对业务结果。详见 [监督首跑与修复](docs/supervised-run.zh-CN.md)。
 
 ## 本地账号和数据
 

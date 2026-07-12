@@ -91,6 +91,11 @@ sh tools/setup.sh                                         # macOS / Linux
 python run.py harness/doctor
 python run.py harness/runtime --json
 
+# Agent 自助安装：依赖 + 模板配置 + 体检 + 无 Key demo，不写入任何密钥
+powershell -ExecutionPolicy Bypass -File tools\agent-bootstrap.ps1  # Windows
+sh tools/agent-bootstrap.sh                                         # macOS / Linux
+python run.py harness/demo
+
 python run.py showcase/web/extract_table -- --url https://example.com
 python run.py showcase/web/xhs/search_posts -- --keyword "露营" --output data/xhs_search.json
 python run.py showcase/web/xhs/post_detail -- --url https://www.xiaohongshu.com/explore/xxx
@@ -123,6 +128,10 @@ python run.py harness/replay -- --trace data/outputs/trace.json --dry-run
 
 # 将轨迹固化为可监督首跑的 Skill；先查看 manifest，再决定是否定时运行
 python run.py harness/solidify -- --trace data/outputs/trace.json --output skills/my_new_skill.py
+
+# 监督首跑：先检查前置条件，再在人工看护下运行；疑似 UI 漂移会返回 repair task
+python run.py harness/supervise -- --manifest skills/my_new_skill.manifest.json
+python run.py harness/supervise -- --manifest skills/my_new_skill.manifest.json --run
 
 # 查看最近任务运行；Agent 也可以通过 run_list 查询
 python run.py harness/runs -- --limit 20

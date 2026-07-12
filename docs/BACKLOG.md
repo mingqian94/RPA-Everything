@@ -38,12 +38,13 @@ Scheduled launch: **2026-07-22 00:01 PT** (15:01 China Standard Time).
 - [x] Record the evidence level used by each solidified step (network/API, DOM selector, template, coordinate), its fallback, and the latest supervised proof.
 - [ ] Add regression fixtures for trace solidification and redaction so a framework change cannot weaken safety boundaries unnoticed.
 - [ ] Improve run history export for bug reports while keeping screenshots, URLs, and secrets opt-in and redacted by default.
-- [ ] Add a clear recovery path when a deterministic Skill detects UI drift: stop, capture evidence, and return a repair task to the Agent.
+- [x] Add a clear recovery path when a deterministic Skill detects UI drift: stop, capture redacted evidence, and return a repair task to the Agent.
 - [x] Return `needs_human_step` for browser login/MFA, including evidence, the requested user action, and a resume condition. Extend this to other interaction types only when their detection is reliable.
 
 ### P1: Non-Developer Onboarding
 
 - [ ] Reduce first-run configuration to a guided doctor result with precise next actions, without handling or storing user secrets in the repository.
+- [x] Add a safe Agent bootstrap and no-key lifecycle preview: install dependencies, create only a template config, then inspect a bundled trace without network or external actions.
 - [x] Add a read-only Agent runtime snapshot: available Skills, connected browser/device state, safety policy, and the recommended next command.
 - [ ] Add a plain-language Skill review checklist before a user enables scheduling or external actions.
 - [ ] Provide a minimal "first useful task" walkthrough that takes under ten minutes and has no external side effect.
