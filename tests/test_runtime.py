@@ -1,6 +1,7 @@
 import pytest
 import runpy
 import sys
+from pathlib import Path
 
 from harness import runtime
 from harness.doctor import Check
@@ -46,7 +47,7 @@ def test_run_entrypoint_dispatches_runtime(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["run.py", "harness/runtime", "--required-only"])
     monkeypatch.setattr(runtime, "main", lambda: called.append(list(sys.argv)))
 
-    runpy.run_path(str(runtime.__file__).replace("harness\\runtime.py", "run.py"), run_name="__main__")
+    runpy.run_path(str(Path(runtime.__file__).resolve().parents[1] / "run.py"), run_name="__main__")
 
     assert called[0][1:] == ["--required-only"]
 
@@ -59,6 +60,6 @@ def test_run_entrypoint_dispatches_demo(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["run.py", "harness/demo", "--json"])
     monkeypatch.setattr(demo, "main", lambda: called.append(list(sys.argv)))
 
-    runpy.run_path(str(demo.__file__).replace("harness\\demo.py", "run.py"), run_name="__main__")
+    runpy.run_path(str(Path(demo.__file__).resolve().parents[1] / "run.py"), run_name="__main__")
 
     assert called[0][1:] == ["--json"]
