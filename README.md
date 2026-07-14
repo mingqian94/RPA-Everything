@@ -4,6 +4,9 @@
 
 ![CI](https://github.com/mingqian94/RPA-Everything/actions/workflows/ci.yml/badge.svg)
 
+<!-- demo gif here -->
+![RPA-Everything demo](docs/media/demo.gif)
+
 An AI-powered automation framework for everyone who works with repetitive computer tasks: describe the task in natural language, and AI turns it into a reusable script.
 
 > **Not a general-purpose RPA platform.** It's a lightweight workflow: *AI writes the script, you review it, the script runs on a schedule.* Built for individuals and teams who repeatedly perform the same operations across web apps, desktop apps, and office documents.
@@ -633,6 +636,10 @@ Skills under `showcase/` are generic examples — **their main value is structur
 
 ---
 
+Questions or enterprise use cases? Open an issue or email mingqian94@qq.com
+
+---
+
 ## License
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE)

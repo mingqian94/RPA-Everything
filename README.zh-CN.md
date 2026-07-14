@@ -4,6 +4,9 @@
 
 ![CI](https://github.com/mingqian94/RPA-Everything/actions/workflows/ci.yml/badge.svg)
 
+<!-- demo gif here -->
+![RPA-Everything 演示](docs/media/demo.gif)
+
 一个面向所有职场人的智能自动化框架：用自然语言描述任务，AI 帮你把重复操作变成可复用的脚本。
 
 > **不是通用 RPA 平台**，而是"AI 写脚本、人来审核、脚本定时跑"的轻量工作流。适合需要频繁处理重复性系统操作的个人或团队。
@@ -640,6 +643,18 @@ CI 会在每个 PR 上自动跑 lint + 测试。
 
 ---
 
+## 关于作者
+
+由王宇晨（鸣谦Ray）构建：10 年产品经理，出版过 AI 产业应用著作，现为企业 AI 落地独立顾问。
+
+- 微信：mingqian94
+- 小红书：鸣谦Ray-AI
+- 邮箱：mingqian94@qq.com
+
+如果这个项目对你有用，欢迎点一个 star；企业自动化咨询也欢迎通过以上方式联系。
+
+---
+
 ## License
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE)
