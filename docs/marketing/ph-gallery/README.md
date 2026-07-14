@@ -11,7 +11,6 @@ Recommended upload order:
 
 Optional:
 
-- `05-showcases.png` - use when you want to emphasize the seven showcase tracks.
 - `01-hero-still.png` - static fallback if a platform does not accept GIF.
 
 Notes:
